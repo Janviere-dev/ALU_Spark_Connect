@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1078535690693",
+    "project_id": "alu-spark-connect",
+    "storage_bucket": "alu-spark-connect.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1078535690693:android:65e5498cde02a6f92313ac",
+        "android_client_info": {
+          "package_name": "com.example.alu_spark_connect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA3TNW__1Aw_wYSTE0GgPETQUMsb7-4BXM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
