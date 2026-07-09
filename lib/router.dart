@@ -38,7 +38,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   // /student/invitation/:id
   if (name.startsWith('/student/invitation/')) {
     final id = name.replaceFirst('/student/invitation/', '');
-    return _slide(InvitationScreen(applicationId: id), settings);
+    return _slide(InvitationScreen(invitationId: id), settings);
   }
 
   // /startup/applicants — optional opportunityId as argument
@@ -60,6 +60,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _slide(const CompleteProfileScreen(), settings);
     case '/student/home':
       return _fade(const StudentShell(), settings);
+    case '/student/explore':
+      return _fade(const StudentShell(initialIndex: 1), settings);
+    case '/student/applications':
+      return _fade(const StudentShell(initialIndex: 2), settings);
     case '/student/notifications':
       return _slide(const StudentNotificationsScreen(), settings);
     case '/student/settings':
