@@ -35,7 +35,7 @@ class _StudentNotificationsScreenState extends State<StudentNotificationsScreen>
       backgroundColor: AppColors.background,
       appBar: ALUAppBar(
         showBack: true,
-        title: 'ALU Ventures',
+        title: 'ALU Connect',
         userInitials: 'JM',
       ),
       body: BlocBuilder<NotificationCubit, NotificationState>(

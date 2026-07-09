@@ -27,6 +27,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _linkedinCtrl = TextEditingController();
   bool _initialized = false;
 
+  // Extra dynamic links: list of {label, controller}
+  final List<Map<String, dynamic>> _extraLinks = [];
+
   @override
   void initState() {
     super.initState();
@@ -46,6 +49,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _linkedinCtrl.text = state.user.linkedinUrl ?? '';
   }
 
+  void _addLink() {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        final labelCtrl = TextEditingController();
+        return AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          title: Text('Add Link', style: AppTextStyles.headlineSm),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: labelCtrl,
+                textCapitalization: TextCapitalization.words,
+                decoration: InputDecoration(
+                  labelText: 'Label (e.g. GitHub, Behance)',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancel', style: AppTextStyles.labelLg.copyWith(color: AppColors.onSurfaceVariant)),
+            ),
+            TextButton(
+              onPressed: () {
+                final label = labelCtrl.text.trim();
+                if (label.isNotEmpty) {
+                  setState(() => _extraLinks.add({
+                    'label': label.toUpperCase(),
+                    'controller': TextEditingController(),
+                  }));
+                }
+                Navigator.pop(ctx);
+              },
+              child: Text('Add', style: AppTextStyles.labelLg.copyWith(color: AppColors.primary)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   void dispose() {
     _nameCtrl.dispose();
@@ -53,6 +106,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _pitchCtrl.dispose();
     _portfolioCtrl.dispose();
     _linkedinCtrl.dispose();
+    for (final link in _extraLinks) {
+      (link['controller'] as TextEditingController).dispose();
+    }
     super.dispose();
   }
 
@@ -67,7 +123,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           icon: const Icon(Icons.arrow_back_ios, size: 18, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('ALU Ventures', style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary)),
+        title: Text('ALU Connect', style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary)),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications_outlined, color: AppColors.onSurface),
@@ -280,14 +336,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           controller: _linkedinCtrl,
                           hint: 'linkedin.com/in/yourprofile',
                         ),
+                        ..._extraLinks.asMap().entries.map((entry) {
+                          final i = entry.key;
+                          final link = entry.value;
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Row(
+                              children: [
+                                Expanded(
+                                  child: _LinkField(
+                                    icon: Icons.link,
+                                    label: link['label'] as String,
+                                    controller: link['controller'] as TextEditingController,
+                                    hint: 'https://',
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                GestureDetector(
+                                  onTap: () => setState(() {
+                                    (link['controller'] as TextEditingController).dispose();
+                                    _extraLinks.removeAt(i);
+                                  }),
+                                  child: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: AppColors.error.withValues(alpha: 0.1),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: const Icon(Icons.delete_outline, color: AppColors.error, size: 18),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
                         const SizedBox(height: 12),
                         GestureDetector(
-                          onTap: () {},
+                          onTap: _addLink,
                           child: Container(
                             padding: const EdgeInsets.all(14),
                             decoration: BoxDecoration(
-                              border: Border.all(
-                                  color: AppColors.outlineVariant, style: BorderStyle.solid),
+                              border: Border.all(color: AppColors.outlineVariant),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -296,8 +386,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                                 const Icon(Icons.add, color: AppColors.primary, size: 18),
                                 const SizedBox(width: 6),
                                 Text('Add Another Link',
-                                    style: AppTextStyles.labelLg
-                                        .copyWith(color: AppColors.primary)),
+                                    style: AppTextStyles.labelLg.copyWith(color: AppColors.primary)),
                               ],
                             ),
                           ),
@@ -354,32 +443,65 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         value: context.read<ProfileCubit>(),
         child: DraggableScrollableSheet(
           expand: false,
-          initialChildSize: 0.6,
+          initialChildSize: 0.65,
           builder: (_, controller) => Padding(
             padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Add Skills', style: AppTextStyles.headlineSm),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text('Add Skills', style: AppTextStyles.headlineSm),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pop(ctx);
+                        _addCustomSkillToProfile(context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.primary),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.add, color: AppColors.primary, size: 16),
+                            const SizedBox(width: 4),
+                            Text('Custom', style: AppTextStyles.labelMd.copyWith(color: AppColors.primary)),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Tap a skill to add it. Can\'t find yours? Use Custom.',
+                  style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+                ),
                 const SizedBox(height: 16),
                 Expanded(
                   child: BlocBuilder<ProfileCubit, ProfileState>(
                     builder: (context, state) {
                       final current =
                           state is ProfileLoaded ? state.editSkills : <String>[];
-                      return Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: AppConstants.skillsList
-                            .where((s) => !current.contains(s))
-                            .map((skill) => SkillChip(
-                                  label: skill,
-                                  onTap: () {
-                                    context.read<ProfileCubit>().addSkill(skill);
-                                    Navigator.pop(ctx);
-                                  },
-                                ))
-                            .toList(),
+                      return SingleChildScrollView(
+                        controller: controller,
+                        child: Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: AppConstants.skillsList
+                              .where((s) => !current.contains(s))
+                              .map((skill) => SkillChip(
+                                    label: skill,
+                                    onTap: () {
+                                      context.read<ProfileCubit>().addSkill(skill);
+                                      Navigator.pop(ctx);
+                                    },
+                                  ))
+                              .toList(),
+                        ),
                       );
                     },
                   ),
@@ -388,6 +510,48 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  void _addCustomSkillToProfile(BuildContext context) {
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Add Custom Skill', style: AppTextStyles.headlineSm),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            hintText: 'e.g. Solidity, Blender, Swahili...',
+            hintStyle: AppTextStyles.bodyMd.copyWith(color: AppColors.outline),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: AppTextStyles.labelLg.copyWith(color: AppColors.onSurfaceVariant)),
+          ),
+          TextButton(
+            onPressed: () {
+              final skill = ctrl.text.trim();
+              if (skill.isNotEmpty) {
+                context.read<ProfileCubit>().addSkill(skill);
+              }
+              Navigator.pop(ctx);
+            },
+            child: Text('Add', style: AppTextStyles.labelLg.copyWith(color: AppColors.primary)),
+          ),
+        ],
       ),
     );
   }

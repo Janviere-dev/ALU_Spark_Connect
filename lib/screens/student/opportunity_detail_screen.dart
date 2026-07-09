@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
+import '../../blocs/bookmark/bookmark_cubit.dart';
 import '../../blocs/opportunity/opportunity_cubit.dart';
 import '../../blocs/opportunity/opportunity_state.dart';
 import '../../core/theme/app_colors.dart';
@@ -277,15 +278,51 @@ class _OpportunityDetailScreenState extends State<OpportunityDetailScreen> {
                     top: false,
                     child: Row(
                       children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          margin: const EdgeInsets.only(right: 12),
-                          decoration: BoxDecoration(
-                            border: Border.all(color: AppColors.outlineVariant),
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                          child: const Icon(Icons.bookmark_border, color: AppColors.onSurface),
+                        BlocBuilder<BookmarkCubit, BookmarkState>(
+                          builder: (context, bmState) {
+                            final saved = context
+                                .read<BookmarkCubit>()
+                                .isOpportunitySaved(widget.opportunityId);
+                            final authState =
+                                context.read<AuthBloc>().state;
+                            return GestureDetector(
+                              onTap: () {
+                                if (authState is AuthAuthenticated) {
+                                  context
+                                      .read<BookmarkCubit>()
+                                      .toggleOpportunity(
+                                        authState.user.id,
+                                        widget.opportunityId,
+                                      );
+                                }
+                              },
+                              child: Container(
+                                width: 52,
+                                height: 52,
+                                margin: const EdgeInsets.only(right: 12),
+                                decoration: BoxDecoration(
+                                  color: saved
+                                      ? AppColors.primary
+                                          .withValues(alpha: 0.1)
+                                      : null,
+                                  border: Border.all(
+                                    color: saved
+                                        ? AppColors.primary
+                                        : AppColors.outlineVariant,
+                                  ),
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                child: Icon(
+                                  saved
+                                      ? Icons.bookmark
+                                      : Icons.bookmark_border,
+                                  color: saved
+                                      ? AppColors.primary
+                                      : AppColors.onSurface,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                         Expanded(
                           child: state.hasApplied

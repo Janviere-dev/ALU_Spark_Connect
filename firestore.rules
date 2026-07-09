@@ -1,0 +1,81 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── helpers ───────────────────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+    function userRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+    function isStudent() { return userRole() == 'student'; }
+    function isStartup() { return userRole() == 'startup'; }
+
+    // ── users ─────────────────────────────────────────────────────────────────
+    // Students are publicly readable (startups browse talent).
+    // Each user may only write their own document.
+    match /users/{uid} {
+      allow read: if isSignedIn();
+      allow create: if isOwner(uid);
+      allow update: if isOwner(uid);
+      allow delete: if false;
+    }
+
+    // ── opportunities ─────────────────────────────────────────────────────────
+    // Any signed-in user can read active opportunities.
+    // Only the owning startup may create / update its own postings.
+    match /opportunities/{oppId} {
+      allow read: if isSignedIn();
+      allow create: if isStartup()
+                    && request.resource.data.startupId == request.auth.uid;
+      allow update: if isStartup()
+                    && resource.data.startupId == request.auth.uid;
+      allow delete: if false;
+    }
+
+    // ── applications ──────────────────────────────────────────────────────────
+    // Students read their own; startups read applications for their opportunities.
+    // Only students can submit; only startups can update status.
+    match /applications/{appId} {
+      allow read: if isSignedIn()
+                  && (resource.data.studentId == request.auth.uid
+                      || get(/databases/$(database)/documents/opportunities/$(resource.data.opportunityId)).data.startupId == request.auth.uid);
+      allow create: if isStudent()
+                    && request.resource.data.studentId == request.auth.uid
+                    && request.resource.data.status == 'submitted';
+      allow update: if isStartup()
+                    && get(/databases/$(database)/documents/opportunities/$(resource.data.opportunityId)).data.startupId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status']);
+      allow delete: if false;
+    }
+
+    // ── invitations ───────────────────────────────────────────────────────────
+    // Only the addressed student or sending startup may read an invitation.
+    // Only startups can create; only the student can accept/decline (update status).
+    match /invitations/{invId} {
+      allow read: if isSignedIn()
+                  && (resource.data.studentId == request.auth.uid
+                      || resource.data.startupId == request.auth.uid);
+      allow create: if isStartup()
+                    && request.resource.data.startupId == request.auth.uid
+                    && request.resource.data.status == 'pending';
+      allow update: if isStudent()
+                    && resource.data.studentId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['status', 'respondedAt']);
+      allow delete: if false;
+    }
+
+    // ── notifications ─────────────────────────────────────────────────────────
+    // Each user reads only their own notifications.
+    // Backend (Cloud Functions / trusted repos) writes via Admin SDK — no client writes.
+    match /notifications/{notifId} {
+      allow read: if isOwner(resource.data.userId);
+      allow write: if false; // written server-side only
+    }
+  }
+}

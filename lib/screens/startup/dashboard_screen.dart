@@ -50,9 +50,17 @@ class _StartupDashboardScreenState extends State<StartupDashboardScreen> {
         onNotification: () => Navigator.pushNamed(context, '/startup/notifications'),
         onSettings: () => Navigator.pushNamed(context, '/startup/settings'),
       ),
-      body: BlocBuilder<StartupCubit, StartupState>(
+      body: BlocConsumer<StartupCubit, StartupState>(
+        listener: (context, state) {
+          if (state is OpportunityPostSuccess) {
+            final authState = context.read<AuthBloc>().state;
+            if (authState is AuthAuthenticated) {
+              context.read<StartupCubit>().loadDashboard(authState.user.id);
+            }
+          }
+        },
         builder: (context, state) {
-          if (state is StartupLoading) {
+          if (state is StartupLoading || state is OpportunityPostSuccess) {
             return const Center(child: CircularProgressIndicator(color: AppColors.primary));
           }
           if (state is StartupDashboardLoaded) {

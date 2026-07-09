@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../blocs/auth/auth_bloc.dart';
+import '../../blocs/auth/auth_state.dart';
+import '../../blocs/bookmark/bookmark_cubit.dart';
 import '../../blocs/opportunity/opportunity_cubit.dart';
 import '../../blocs/opportunity/opportunity_state.dart';
 import '../../core/constants/app_constants.dart';
@@ -128,11 +131,22 @@ class _StudentExploreScreenState extends State<StudentExploreScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      ...opps.map((opp) => OpportunityCard(
-                            opportunity: opp,
-                            onTap: () => Navigator.pushNamed(
-                                context, '/student/opportunity/${opp.id}'),
-                          )),
+                      ...opps.map((opp) {
+                        final bm = context.watch<BookmarkCubit>();
+                        final authState = context.read<AuthBloc>().state;
+                        return OpportunityCard(
+                          opportunity: opp,
+                          onTap: () => Navigator.pushNamed(
+                              context, '/student/opportunity/${opp.id}'),
+                          isBookmarked: bm.isOpportunitySaved(opp.id),
+                          onBookmark: () {
+                            if (authState is AuthAuthenticated) {
+                              bm.toggleOpportunity(
+                                  authState.user.id, opp.id);
+                            }
+                          },
+                        );
+                      }),
                       const SizedBox(height: 16),
                       _BottomBannerRow(),
                       const SizedBox(height: 24),

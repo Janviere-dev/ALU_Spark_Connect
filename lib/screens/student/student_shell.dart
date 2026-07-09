@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../blocs/auth/auth_bloc.dart';
+import '../../blocs/auth/auth_state.dart';
+import '../../blocs/bookmark/bookmark_cubit.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'home_screen.dart';
@@ -28,6 +32,10 @@ class _StudentShellState extends State<StudentShell> {
   void initState() {
     super.initState();
     _currentIndex = widget.initialIndex;
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthAuthenticated) {
+      context.read<BookmarkCubit>().load(authState.user.id);
+    }
   }
 
   @override

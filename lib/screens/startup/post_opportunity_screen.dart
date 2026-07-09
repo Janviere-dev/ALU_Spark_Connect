@@ -28,6 +28,7 @@ class _PostOpportunityScreenState extends State<PostOpportunityScreen> {
   String _selectedCommitment = 'Part-time';
   String _selectedLocation = 'Remote';
   final List<String> _selectedSkills = [];
+  final List<String> _customSkills = [];
 
   final List<String> _commitmentOptions = ['Part-time', 'Full-time', 'Project-based'];
   final List<String> _locationOptions = ['Remote', 'On-site', 'Hybrid'];
@@ -38,6 +39,51 @@ class _PostOpportunityScreenState extends State<PostOpportunityScreen> {
     _descriptionCtrl.dispose();
     _compensationCtrl.dispose();
     super.dispose();
+  }
+
+  void _addCustomSkill() {
+    final ctrl = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Text('Add Custom Skill', style: AppTextStyles.headlineSm),
+        content: TextField(
+          controller: ctrl,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: InputDecoration(
+            hintText: 'e.g. Solidity, Blender, Swahili...',
+            hintStyle: AppTextStyles.bodyMd.copyWith(color: AppColors.outline),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+            ),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cancel', style: AppTextStyles.labelLg.copyWith(color: AppColors.onSurfaceVariant)),
+          ),
+          TextButton(
+            onPressed: () {
+              final skill = ctrl.text.trim();
+              if (skill.isNotEmpty && !_selectedSkills.contains(skill)) {
+                setState(() {
+                  _customSkills.add(skill);
+                  _selectedSkills.add(skill);
+                });
+              }
+              Navigator.pop(ctx);
+            },
+            child: Text('Add', style: AppTextStyles.labelLg.copyWith(color: AppColors.primary)),
+          ),
+        ],
+      ),
+    );
   }
 
   void _submit() {
@@ -83,7 +129,7 @@ class _PostOpportunityScreenState extends State<PostOpportunityScreen> {
           icon: const Icon(Icons.arrow_back_ios, size: 18, color: AppColors.primary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('ALU Ventures', style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary)),
+        title: Text('ALU Connect', style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary)),
       ),
       body: BlocListener<StartupCubit, StartupState>(
         listener: (context, state) {
@@ -289,25 +335,63 @@ class _PostOpportunityScreenState extends State<PostOpportunityScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      if (_customSkills.isNotEmpty) ...[
+                        Text('Added by you', style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant)),
+                        const SizedBox(height: 8),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _customSkills.map((skill) => SkillChip(
+                            label: skill,
+                            isSelected: true,
+                            isRemovable: true,
+                            onRemove: () => setState(() {
+                              _customSkills.remove(skill);
+                              _selectedSkills.remove(skill);
+                            }),
+                          )).toList(),
+                        ),
+                        const SizedBox(height: 12),
+                      ],
                       Wrap(
                         spacing: 8,
                         runSpacing: 8,
-                        children: AppConstants.skillsList.map((skill) {
-                          final isSelected = _selectedSkills.contains(skill);
-                          return SkillChip(
-                            label: skill,
-                            isSelected: isSelected,
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  _selectedSkills.remove(skill);
-                                } else {
-                                  _selectedSkills.add(skill);
-                                }
-                              });
-                            },
-                          );
-                        }).toList(),
+                        children: [
+                          ...AppConstants.skillsList.map((skill) {
+                            final isSelected = _selectedSkills.contains(skill);
+                            return SkillChip(
+                              label: skill,
+                              isSelected: isSelected,
+                              onTap: () {
+                                setState(() {
+                                  if (isSelected) {
+                                    _selectedSkills.remove(skill);
+                                  } else {
+                                    _selectedSkills.add(skill);
+                                  }
+                                });
+                              },
+                            );
+                          }),
+                          GestureDetector(
+                            onTap: _addCustomSkill,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: AppColors.primary, width: 1.5),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.add, color: AppColors.primary, size: 16),
+                                  const SizedBox(width: 4),
+                                  Text('Add custom', style: AppTextStyles.labelMd.copyWith(color: AppColors.primary)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),

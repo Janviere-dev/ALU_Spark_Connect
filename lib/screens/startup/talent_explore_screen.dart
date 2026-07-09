@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
+import '../../blocs/bookmark/bookmark_cubit.dart';
+import '../../blocs/invitation/invitation_cubit.dart';
 import '../../blocs/startup/startup_cubit.dart';
 import '../../blocs/startup/startup_state.dart';
 import '../../core/constants/app_constants.dart';
@@ -9,6 +11,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../data/models/user_model.dart';
 import '../../widgets/app_header.dart';
+import '../../widgets/send_invitation_sheet.dart';
 
 class TalentExploreScreen extends StatefulWidget {
   const TalentExploreScreen({super.key});
@@ -49,7 +52,7 @@ class _TalentExploreScreenState extends State<TalentExploreScreen> {
                 Text('Discover Talent', style: AppTextStyles.headlineLg),
                 const SizedBox(height: 4),
                 Text(
-                  'Students open to internship opportunities at ALU ventures.',
+                  'Students open to internship opportunities at ALU Connect.',
                   style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
                 ),
                 const SizedBox(height: 16),
@@ -128,13 +131,23 @@ class _TalentExploreScreenState extends State<TalentExploreScreen> {
                       focusFilter: _selectedFocus,
                     );
                   }
+                  final authState = context.read<AuthBloc>().state;
+                  final startupId = authState is AuthAuthenticated
+                      ? authState.user.id
+                      : '';
+                  final startupName = authState is AuthAuthenticated
+                      ? (authState.user.ventureName ?? authState.user.fullName)
+                      : '';
                   return ListView.separated(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: state.students.length,
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 10),
-                    itemBuilder: (context, index) =>
-                        _StudentCard(student: state.students[index]),
+                    itemBuilder: (context, index) => _StudentCard(
+                      student: state.students[index],
+                      startupId: startupId,
+                      startupName: startupName,
+                    ),
                   );
                 }
                 return const SizedBox.shrink();
@@ -188,7 +201,14 @@ class _FilterChip extends StatelessWidget {
 
 class _StudentCard extends StatelessWidget {
   final UserModel student;
-  const _StudentCard({required this.student});
+  final String startupId;
+  final String startupName;
+
+  const _StudentCard({
+    required this.student,
+    required this.startupId,
+    required this.startupName,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -289,7 +309,19 @@ class _StudentCard extends StatelessWidget {
             children: [
               Expanded(
                 child: GestureDetector(
-                  onTap: () {},
+                  onTap: () => showModalBottomSheet(
+                    context: context,
+                    isScrollControlled: true,
+                    backgroundColor: Colors.transparent,
+                    builder: (_) => BlocProvider.value(
+                      value: context.read<InvitationCubit>(),
+                      child: SendInvitationSheet(
+                        student: student,
+                        startupId: startupId,
+                        startupName: startupName,
+                      ),
+                    ),
+                  ),
                   child: Container(
                     padding: const EdgeInsets.symmetric(vertical: 10),
                     decoration: BoxDecoration(
@@ -306,18 +338,34 @@ class _StudentCard extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              GestureDetector(
-                onTap: () {},
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: AppColors.surfaceContainerLow,
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: AppColors.outlineVariant),
-                  ),
-                  child: const Icon(Icons.bookmark_outline,
-                      color: AppColors.onSurfaceVariant, size: 20),
-                ),
+              BlocBuilder<BookmarkCubit, BookmarkState>(
+                builder: (context, bmState) {
+                  final saved = context.read<BookmarkCubit>().isStudentSaved(student.id);
+                  return GestureDetector(
+                    onTap: () => context
+                        .read<BookmarkCubit>()
+                        .toggleStudent(startupId, student.id),
+                    child: Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: saved
+                            ? AppColors.primary.withValues(alpha: 0.1)
+                            : AppColors.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                          color: saved
+                              ? AppColors.primary
+                              : AppColors.outlineVariant,
+                        ),
+                      ),
+                      child: Icon(
+                        saved ? Icons.bookmark : Icons.bookmark_outline,
+                        color: saved ? AppColors.primary : AppColors.onSurfaceVariant,
+                        size: 20,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
