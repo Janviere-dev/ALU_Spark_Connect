@@ -1,4 +1,5 @@
 import '../models/application_model.dart';
+import '../models/invitation_model.dart';
 import '../models/notification_model.dart';
 import '../models/opportunity_model.dart';
 import '../models/user_model.dart';
@@ -355,6 +356,22 @@ class MockDB {
     ),
   ];
 
+  final List<InvitationModel> _invitations = [
+    InvitationModel(
+      id: 'inv_001',
+      startupId: 'startup_001',
+      startupName: 'Nexus AI Solutions',
+      studentId: 'student_001',
+      studentName: 'Janviere Munezero',
+      opportunityId: 'opp_002',
+      roleTitle: 'Product Design Lead',
+      message:
+          'Hi Janviere! We were incredibly impressed by your portfolio, especially your work on fintech UX. Your approach aligns perfectly with our vision at Nexus. We\'d love to have you on the team!',
+      status: InvitationStatus.pending,
+      createdAt: DateTime.now().subtract(const Duration(hours: 3)),
+    ),
+  ];
+
   final List<NotificationModel> _notifications = [
     NotificationModel(
       id: 'notif_001',
@@ -425,6 +442,7 @@ class MockDB {
   List<OpportunityModel> get opportunities => List.unmodifiable(_opportunities);
   List<ApplicationModel> get applications => List.unmodifiable(_applications);
   List<NotificationModel> get notifications => List.unmodifiable(_notifications);
+  List<InvitationModel> get invitations => List.unmodifiable(_invitations);
 
   UserModel? findUserByEmail(String email) {
     try {
@@ -486,4 +504,68 @@ class MockDB {
 
   List<UserModel> getOpenStudents() =>
       _users.where((u) => u.role == UserRole.student && u.isOpenToOpportunities).toList();
+
+  // Invitations
+  void addInvitation(InvitationModel inv) {
+    _invitations.add(inv);
+    _notifications.add(NotificationModel(
+      id: 'notif_inv_${inv.id}',
+      userId: inv.studentId,
+      type: NotificationType.interviewInvitation,
+      title: 'You\'ve been invited!',
+      body: '${inv.startupName} invited you for the ${inv.roleTitle} role.',
+      isPriority: true,
+      isRead: false,
+      actionId: inv.id,
+      createdAt: DateTime.now(),
+    ));
+  }
+
+  void updateInvitation(InvitationModel updated) {
+    final idx = _invitations.indexWhere((i) => i.id == updated.id);
+    if (idx != -1) _invitations[idx] = updated;
+  }
+
+  List<InvitationModel> getInvitationsForStudent(String studentId) =>
+      _invitations.where((i) => i.studentId == studentId).toList();
+
+  List<InvitationModel> getInvitationsForStartup(String startupId) =>
+      _invitations.where((i) => i.startupId == startupId).toList();
+
+  InvitationModel? findInvitation(String id) {
+    try {
+      return _invitations.firstWhere((i) => i.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // Bookmarks
+  void toggleSavedOpportunity(String userId, String opportunityId) {
+    final idx = _users.indexWhere((u) => u.id == userId);
+    if (idx == -1) return;
+    final user = _users[idx];
+    final saved = List<String>.from(user.savedOpportunityIds);
+    if (saved.contains(opportunityId)) {
+      saved.remove(opportunityId);
+    } else {
+      saved.add(opportunityId);
+    }
+    _users[idx] = user.copyWith(savedOpportunityIds: saved);
+    if (_currentUser?.id == userId) _currentUser = _users[idx];
+  }
+
+  void toggleSavedStudent(String startupId, String studentId) {
+    final idx = _users.indexWhere((u) => u.id == startupId);
+    if (idx == -1) return;
+    final user = _users[idx];
+    final saved = List<String>.from(user.savedStudentIds);
+    if (saved.contains(studentId)) {
+      saved.remove(studentId);
+    } else {
+      saved.add(studentId);
+    }
+    _users[idx] = user.copyWith(savedStudentIds: saved);
+    if (_currentUser?.id == startupId) _currentUser = _users[idx];
+  }
 }
