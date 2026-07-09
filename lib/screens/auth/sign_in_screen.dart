@@ -66,7 +66,7 @@ class _SignInScreenState extends State<SignInScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'ALU Ventures',
+                      'ALU Connect',
                       style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary),
                     ),
                     Row(
@@ -196,23 +196,6 @@ class _SignInScreenState extends State<SignInScreen> {
                           ),
                         ),
                         const SizedBox(height: 24),
-                        Row(
-                          children: [
-                            const Expanded(child: Divider()),
-                            Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 12),
-                              child: Text(
-                                'OR CONTINUE WITH',
-                                style: AppTextStyles.labelSm
-                                    .copyWith(color: AppColors.onSurfaceVariant),
-                              ),
-                            ),
-                            const Expanded(child: Divider()),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-                        AppButton(label: 'Google', isOutlined: true, onPressed: () {}),
-                        const SizedBox(height: 24),
                         Center(
                           child: RichText(
                             text: TextSpan(
@@ -237,7 +220,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         const SizedBox(height: 24),
                         Center(
                           child: Text(
-                            '© 2024 ALU Ventures. All rights reserved.',
+                            '© 2024 ALU Connect. All rights reserved.',
                             style: AppTextStyles.labelMd
                                 .copyWith(color: AppColors.onSurfaceVariant),
                           ),

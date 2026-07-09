@@ -32,96 +32,84 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         }
       },
       child: Scaffold(
-        backgroundColor: const Color(0xFF0A0015),
+        backgroundColor: AppColors.background,
         body: SafeArea(
           child: Column(
             children: [
+              // Header
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.rocket_launch, color: Colors.white, size: 18),
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'ALU Ventures',
-                          style: AppTextStyles.headlineSm.copyWith(color: Colors.white),
-                        ),
-                      ],
-                    ),
                     Container(
-                      width: 36,
-                      height: 36,
+                      width: 32,
+                      height: 32,
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withValues(alpha: 0.3)),
-                        image: const DecorationImage(
-                          image: NetworkImage('https://i.pravatar.cc/100?img=1'),
-                          fit: BoxFit.cover,
-                        ),
+                        gradient: AppColors.primaryGradient,
+                        borderRadius: BorderRadius.circular(8),
                       ),
+                      child: const Icon(Icons.rocket_launch, color: Colors.white, size: 18),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'ALU Connect',
+                      style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary),
                     ),
                   ],
                 ),
               ),
+              // Hero
               Expanded(
-                child: Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    _HeroIllustration(),
-                    const SizedBox(height: 24),
-                    RichText(
-                      textAlign: TextAlign.center,
-                      text: TextSpan(
-                        text: 'Hello, ',
-                        style: AppTextStyles.headlineMd.copyWith(color: Colors.white),
-                        children: [
-                          TextSpan(
-                            text: 'Student/Entrepreneur!',
-                            style: AppTextStyles.headlineMd.copyWith(
-                              color: AppColors.primaryContainer,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _HeroIllustration(),
+                      const SizedBox(height: 28),
+                      RichText(
+                        textAlign: TextAlign.center,
+                        text: TextSpan(
+                          text: 'Hello, ',
+                          style: AppTextStyles.headlineMd.copyWith(color: AppColors.onSurface),
+                          children: [
+                            TextSpan(
+                              text: 'Student/Entrepreneur!',
+                              style: AppTextStyles.headlineMd.copyWith(color: AppColors.primary),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 32),
-                      child: Text(
+                      const SizedBox(height: 8),
+                      Text(
                         'Empowering the next generation of African leaders through venture-backed talent matching.',
                         textAlign: TextAlign.center,
-                        style: AppTextStyles.bodyMd.copyWith(
-                          color: Colors.white.withValues(alpha: 0.7),
-                        ),
+                        style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
+              // Bottom card
               Container(
                 decoration: const BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+                  boxShadow: [
+                    BoxShadow(color: Color(0x0A000000), blurRadius: 20, offset: Offset(0, -4)),
+                  ],
                 ),
-                padding: const EdgeInsets.all(24),
+                padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'I AM A...',
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                        letterSpacing: 2,
+                    Center(
+                      child: Text(
+                        'I AM A...',
+                        style: AppTextStyles.labelSm.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                          letterSpacing: 2,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),
@@ -159,21 +147,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Already have an account?  ',
-                          style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
-                        ),
-                        GestureDetector(
-                          onTap: () => Navigator.pushNamed(context, '/sign-in'),
-                          child: Text(
-                            'Sign Up',
-                            style: AppTextStyles.labelLg.copyWith(color: AppColors.primary),
+                    Center(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Already have an account?  ',
+                            style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
                           ),
-                        ),
-                      ],
+                          GestureDetector(
+                            onTap: () => Navigator.pushNamed(context, '/sign-in'),
+                            child: Text(
+                              'Sign In',
+                              style: AppTextStyles.labelLg.copyWith(color: AppColors.primary),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -189,51 +179,71 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 class _HeroIllustration extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
+    return Container(
+      width: double.infinity,
       height: 200,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.primary.withValues(alpha: 0.08),
+            AppColors.secondary.withValues(alpha: 0.06),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
       child: Stack(
         alignment: Alignment.center,
         children: [
+          // Background ring
           Container(
-            width: 220,
-            height: 160,
+            width: 140,
+            height: 140,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.primary.withValues(alpha: 0.3),
-                  AppColors.secondary.withValues(alpha: 0.2),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                width: 24,
               ),
-              borderRadius: BorderRadius.circular(20),
             ),
           ),
+          // Center orb
           Container(
             width: 80,
             height: 80,
             decoration: BoxDecoration(
-              gradient: AppColors.heroGradient,
+              gradient: AppColors.primaryGradient,
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primary.withValues(alpha: 0.5),
-                  blurRadius: 20,
-                  spreadRadius: 5,
+                  color: AppColors.primary.withValues(alpha: 0.35),
+                  blurRadius: 24,
+                  spreadRadius: 4,
                 ),
               ],
             ),
-            child: const Icon(Icons.auto_awesome, color: Colors.white, size: 40),
+            child: const Icon(Icons.auto_awesome, color: Colors.white, size: 36),
           ),
           Positioned(
-            top: 20,
-            left: 40,
+            top: 28,
+            left: 36,
             child: _FloatingIcon(Icons.person_outline),
           ),
           Positioned(
-            bottom: 20,
-            right: 40,
+            bottom: 28,
+            right: 36,
             child: _FloatingIcon(Icons.rocket_launch_outlined),
+          ),
+          Positioned(
+            top: 28,
+            right: 52,
+            child: _FloatingIcon(Icons.work_outline),
+          ),
+          Positioned(
+            bottom: 28,
+            left: 52,
+            child: _FloatingIcon(Icons.star_outline),
           ),
         ],
       ),
@@ -248,13 +258,20 @@ class _FloatingIcon extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 44,
-      height: 44,
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
-        color: AppColors.primary.withValues(alpha: 0.8),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
-      child: Icon(icon, color: Colors.white, size: 22),
+      child: Icon(icon, color: AppColors.primary, size: 20),
     );
   }
 }

@@ -88,7 +88,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        'ALU Ventures',
+                        'ALU Connect',
                         style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary),
                       ),
                     ],
@@ -216,35 +216,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
                       onPressed: _submit,
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      const Expanded(child: Divider()),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          'OR SIGN UP WITH',
-                          style: AppTextStyles.labelSm.copyWith(color: AppColors.onSurfaceVariant),
-                        ),
-                      ),
-                      const Expanded(child: Divider()),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  AppButton(
-                    label: 'Google',
-                    isOutlined: true,
-                    icon: Container(
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: AppColors.primary,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: const Icon(Icons.g_mobiledata, color: Colors.white, size: 16),
-                    ),
-                    onPressed: () {},
                   ),
                   const SizedBox(height: 20),
                   Center(

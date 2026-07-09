@@ -17,7 +17,7 @@ class ALUAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   const ALUAppBar({
     super.key,
-    this.title = 'ALU Ventures',
+    this.title = 'ALU Connect',
     this.showBack = false,
     this.userInitials,
     this.avatarUrl,
