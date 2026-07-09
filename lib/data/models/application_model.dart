@@ -94,6 +94,49 @@ class ApplicationModel extends Equatable {
     );
   }
 
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'studentId': studentId,
+        'studentName': studentName,
+        'studentEmail': studentEmail,
+        'studentUniversity': studentUniversity,
+        'opportunityId': opportunityId,
+        'roleTitle': roleTitle,
+        'startupName': startupName,
+        'startupLogoUrl': startupLogoUrl,
+        'pitch': pitch,
+        'cvUrl': cvUrl,
+        'status': status.name,
+        'matchScore': matchScore,
+        'studentSkills': studentSkills,
+        'appliedAt': appliedAt.millisecondsSinceEpoch,
+        'interviewDate': interviewDate?.millisecondsSinceEpoch,
+      };
+
+  factory ApplicationModel.fromMap(Map<String, dynamic> map) => ApplicationModel(
+        id: map['id'] as String,
+        studentId: map['studentId'] as String,
+        studentName: map['studentName'] as String,
+        studentEmail: map['studentEmail'] as String,
+        studentUniversity: map['studentUniversity'] as String?,
+        opportunityId: map['opportunityId'] as String,
+        roleTitle: map['roleTitle'] as String,
+        startupName: map['startupName'] as String,
+        startupLogoUrl: map['startupLogoUrl'] as String?,
+        pitch: map['pitch'] as String,
+        cvUrl: map['cvUrl'] as String?,
+        status: ApplicationStatus.values.firstWhere(
+            (s) => s.name == map['status'],
+            orElse: () => ApplicationStatus.submitted),
+        matchScore: map['matchScore'] as int? ?? 0,
+        studentSkills: List<String>.from(map['studentSkills'] ?? []),
+        appliedAt: DateTime.fromMillisecondsSinceEpoch(
+            map['appliedAt'] as int? ?? 0),
+        interviewDate: map['interviewDate'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(map['interviewDate'] as int)
+            : null,
+      );
+
   @override
   List<Object?> get props => [id, studentId, opportunityId, status, appliedAt];
 }

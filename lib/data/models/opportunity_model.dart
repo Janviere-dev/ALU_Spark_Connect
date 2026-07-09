@@ -96,6 +96,55 @@ class OpportunityModel extends Equatable {
     );
   }
 
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'startupId': startupId,
+        'startupName': startupName,
+        'startupLogoUrl': startupLogoUrl,
+        'roleTitle': roleTitle,
+        'category': category,
+        'description': description,
+        'whyJoinUs': whyJoinUs,
+        'skills': skills,
+        'commitment': commitment,
+        'location': location,
+        'duration': duration,
+        'isRemoteFriendly': isRemoteFriendly,
+        'equityOffered': equityOffered,
+        'compensation': compensation,
+        'applicantCount': applicantCount,
+        'viewCount': viewCount,
+        'status': status.name,
+        'isFeatured': isFeatured,
+        'postedAt': postedAt.millisecondsSinceEpoch,
+      };
+
+  factory OpportunityModel.fromMap(Map<String, dynamic> map) => OpportunityModel(
+        id: map['id'] as String,
+        startupId: map['startupId'] as String,
+        startupName: map['startupName'] as String,
+        startupLogoUrl: map['startupLogoUrl'] as String?,
+        roleTitle: map['roleTitle'] as String,
+        category: map['category'] as String,
+        description: map['description'] as String,
+        whyJoinUs: map['whyJoinUs'] as String?,
+        skills: List<String>.from(map['skills'] ?? []),
+        commitment: map['commitment'] as String,
+        location: map['location'] as String,
+        duration: map['duration'] as String,
+        isRemoteFriendly: map['isRemoteFriendly'] as bool? ?? false,
+        equityOffered: map['equityOffered'] as bool? ?? false,
+        compensation: map['compensation'] as String?,
+        applicantCount: map['applicantCount'] as int? ?? 0,
+        viewCount: map['viewCount'] as int? ?? 0,
+        status: OpportunityStatus.values.firstWhere(
+            (s) => s.name == map['status'],
+            orElse: () => OpportunityStatus.active),
+        isFeatured: map['isFeatured'] as bool? ?? false,
+        postedAt: DateTime.fromMillisecondsSinceEpoch(
+            map['postedAt'] as int? ?? 0),
+      );
+
   @override
   List<Object?> get props => [
         id,

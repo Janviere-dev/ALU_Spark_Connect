@@ -55,6 +55,34 @@ class NotificationModel extends Equatable {
     );
   }
 
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'userId': userId,
+        'type': type.name,
+        'title': title,
+        'body': body,
+        'isRead': isRead,
+        'isPriority': isPriority,
+        'actionId': actionId,
+        'createdAt': createdAt.millisecondsSinceEpoch,
+      };
+
+  factory NotificationModel.fromMap(Map<String, dynamic> map) =>
+      NotificationModel(
+        id: map['id'] as String,
+        userId: map['userId'] as String,
+        type: NotificationType.values.firstWhere(
+            (t) => t.name == map['type'],
+            orElse: () => NotificationType.systemUpdate),
+        title: map['title'] as String,
+        body: map['body'] as String,
+        isRead: map['isRead'] as bool? ?? false,
+        isPriority: map['isPriority'] as bool? ?? false,
+        actionId: map['actionId'] as String?,
+        createdAt: DateTime.fromMillisecondsSinceEpoch(
+            map['createdAt'] as int? ?? 0),
+      );
+
   @override
   List<Object?> get props => [id, userId, type, isRead, createdAt];
 }

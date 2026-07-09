@@ -21,6 +21,8 @@ class UserModel extends Equatable {
   final String? cvUrl;
   final bool isOpenToOpportunities;
   final bool onboardingComplete;
+  final List<String> savedOpportunityIds;
+  final List<String> savedStudentIds;
   final DateTime createdAt;
 
   const UserModel({
@@ -42,6 +44,8 @@ class UserModel extends Equatable {
     this.cvUrl,
     this.isOpenToOpportunities = true,
     this.onboardingComplete = false,
+    this.savedOpportunityIds = const [],
+    this.savedStudentIds = const [],
     required this.createdAt,
   });
 
@@ -67,6 +71,8 @@ class UserModel extends Equatable {
     String? cvUrl,
     bool? isOpenToOpportunities,
     bool? onboardingComplete,
+    List<String>? savedOpportunityIds,
+    List<String>? savedStudentIds,
   }) {
     return UserModel(
       id: id,
@@ -87,9 +93,61 @@ class UserModel extends Equatable {
       cvUrl: cvUrl ?? this.cvUrl,
       isOpenToOpportunities: isOpenToOpportunities ?? this.isOpenToOpportunities,
       onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      savedOpportunityIds: savedOpportunityIds ?? this.savedOpportunityIds,
+      savedStudentIds: savedStudentIds ?? this.savedStudentIds,
       createdAt: createdAt,
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'fullName': fullName,
+        'email': email,
+        'role': role.name,
+        'avatarUrl': avatarUrl,
+        'ventureName': ventureName,
+        'education': education,
+        'shortPitch': shortPitch,
+        'skills': skills,
+        'focusAreas': focusAreas,
+        'availability': availability,
+        'startDate': startDate,
+        'portfolioUrl': portfolioUrl,
+        'linkedinUrl': linkedinUrl,
+        'githubUrl': githubUrl,
+        'cvUrl': cvUrl,
+        'isOpenToOpportunities': isOpenToOpportunities,
+        'onboardingComplete': onboardingComplete,
+        'savedOpportunityIds': savedOpportunityIds,
+        'savedStudentIds': savedStudentIds,
+        'createdAt': createdAt.millisecondsSinceEpoch,
+      };
+
+  factory UserModel.fromMap(Map<String, dynamic> map) => UserModel(
+        id: map['id'] as String,
+        fullName: map['fullName'] as String,
+        email: map['email'] as String,
+        role: UserRole.values.firstWhere((r) => r.name == map['role']),
+        avatarUrl: map['avatarUrl'] as String?,
+        ventureName: map['ventureName'] as String?,
+        education: map['education'] as String?,
+        shortPitch: map['shortPitch'] as String?,
+        skills: List<String>.from(map['skills'] ?? []),
+        focusAreas: List<String>.from(map['focusAreas'] ?? []),
+        availability: map['availability'] as String?,
+        startDate: map['startDate'] as String?,
+        portfolioUrl: map['portfolioUrl'] as String?,
+        linkedinUrl: map['linkedinUrl'] as String?,
+        githubUrl: map['githubUrl'] as String?,
+        cvUrl: map['cvUrl'] as String?,
+        isOpenToOpportunities: map['isOpenToOpportunities'] as bool? ?? true,
+        onboardingComplete: map['onboardingComplete'] as bool? ?? false,
+        savedOpportunityIds:
+            List<String>.from(map['savedOpportunityIds'] ?? []),
+        savedStudentIds: List<String>.from(map['savedStudentIds'] ?? []),
+        createdAt: DateTime.fromMillisecondsSinceEpoch(
+            map['createdAt'] as int? ?? 0),
+      );
 
   @override
   List<Object?> get props => [
@@ -111,6 +169,8 @@ class UserModel extends Equatable {
         cvUrl,
         isOpenToOpportunities,
         onboardingComplete,
+        savedOpportunityIds,
+        savedStudentIds,
         createdAt,
       ];
 }
