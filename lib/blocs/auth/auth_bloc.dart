@@ -17,7 +17,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   }
 
   Future<void> _onCheckRequested(AuthCheckRequested event, Emitter<AuthState> emit) async {
-    final user = _authRepository.getCurrentUser();
+    final user = await _authRepository.getCurrentUser();
     if (user != null) {
       emit(AuthAuthenticated(user));
     } else {
@@ -28,7 +28,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
   Future<void> _onSignInRequested(AuthSignInRequested event, Emitter<AuthState> emit) async {
     emit(AuthLoading());
     try {
-      final user = await _authRepository.signIn(email: event.email, password: event.password);
+      final user = await _authRepository.signIn(email: event.email, password: event.password, role: event.role);
       emit(AuthAuthenticated(user));
     } catch (e) {
       emit(AuthFailure(e.toString().replaceFirst('Exception: ', '')));
@@ -44,6 +44,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         password: event.password,
         role: event.role,
         ventureName: event.ventureName,
+        location: event.location,
+        docsLink: event.docsLink,
       );
       emit(AuthAuthenticated(user));
     } catch (e) {

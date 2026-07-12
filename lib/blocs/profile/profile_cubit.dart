@@ -42,6 +42,8 @@ class ProfileCubit extends Cubit<ProfileState> {
 
   Future<void> save({
     required String fullName,
+    String? avatarUrl,
+    String? location,
     required String education,
     required String shortPitch,
     required String portfolioUrl,
@@ -52,11 +54,52 @@ class ProfileCubit extends Cubit<ProfileState> {
     try {
       final updated = current.user.copyWith(
         fullName: fullName.trim(),
+        avatarUrl: avatarUrl ?? current.user.avatarUrl,
+        location: location,
         education: education.trim(),
         shortPitch: shortPitch.trim(),
         portfolioUrl: portfolioUrl.trim(),
         linkedinUrl: linkedinUrl.trim(),
         skills: current.editSkills,
+      );
+      await _authRepository.updateProfile(updated);
+      emit(ProfileSaveSuccess(updated));
+    } catch (e) {
+      emit(ProfileError(e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  Future<void> saveFocusAreas(List<String> focusAreas) async {
+    final current = state as ProfileLoaded;
+    emit(ProfileLoading());
+    try {
+      final updated = current.user.copyWith(focusAreas: focusAreas);
+      await _authRepository.updateProfile(updated);
+      emit(ProfileSaveSuccess(updated));
+    } catch (e) {
+      emit(ProfileError(e.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+
+  Future<void> saveStartupOnboarding({
+    required String founderName,
+    required String mission,
+    required String problemStatement,
+    required String impact,
+    required List<String> focusAreas,
+    String? teamSize,
+  }) async {
+    final current = state as ProfileLoaded;
+    emit(ProfileLoading());
+    try {
+      final updated = current.user.copyWith(
+        founderName: founderName.trim().isNotEmpty ? founderName.trim() : current.user.founderName,
+        shortPitch: mission.trim().isNotEmpty ? mission.trim() : current.user.shortPitch,
+        problemStatement: problemStatement.trim().isNotEmpty ? problemStatement.trim() : current.user.problemStatement,
+        impact: impact.trim().isNotEmpty ? impact.trim() : current.user.impact,
+        focusAreas: focusAreas.isNotEmpty ? focusAreas : current.user.focusAreas,
+        teamSize: teamSize ?? current.user.teamSize,
+        onboardingComplete: true,
       );
       await _authRepository.updateProfile(updated);
       emit(ProfileSaveSuccess(updated));

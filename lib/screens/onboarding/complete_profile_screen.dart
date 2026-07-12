@@ -40,7 +40,7 @@ class _CompleteProfileScreenState extends State<CompleteProfileScreen> {
       body: BlocConsumer<OnboardingCubit, OnboardingState>(
         listener: (context, state) {
           if (state.isComplete) {
-            Navigator.pushReplacementNamed(context, '/student/home');
+            Navigator.pushReplacementNamed(context, '/onboarding/welcome');
           }
         },
         builder: (context, state) {

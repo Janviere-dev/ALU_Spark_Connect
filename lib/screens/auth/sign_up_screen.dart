@@ -20,9 +20,11 @@ class SignUpScreen extends StatefulWidget {
 class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   final _ventureCtrl = TextEditingController();
+  final _docsLinkCtrl = TextEditingController();
   late UserRole _role;
   bool _agreedToTerms = false;
 
@@ -35,9 +37,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _locationCtrl.dispose();
     _emailCtrl.dispose();
     _passwordCtrl.dispose();
     _ventureCtrl.dispose();
+    _docsLinkCtrl.dispose();
     super.dispose();
   }
 
@@ -51,11 +55,29 @@ class _SignUpScreenState extends State<SignUpScreen> {
     if (_formKey.currentState?.validate() != true) return;
     context.read<AuthBloc>().add(AuthSignUpRequested(
           fullName: _nameCtrl.text,
+          location: _locationCtrl.text.trim().isEmpty ? null : _locationCtrl.text.trim(),
           email: _emailCtrl.text,
           password: _passwordCtrl.text,
           role: _role,
           ventureName: _role == UserRole.startup ? _ventureCtrl.text : null,
+          docsLink: _role == UserRole.startup ? _docsLinkCtrl.text.trim() : null,
         ));
+  }
+
+  void _onAuthSuccess(BuildContext context, UserModel user) {
+    if (user.role == UserRole.admin) {
+      Navigator.pushReplacementNamed(context, '/admin');
+      return;
+    }
+    if (user.role == UserRole.startup) {
+      if (user.status == 'pending') {
+        Navigator.pushReplacementNamed(context, '/pending');
+      } else {
+        Navigator.pushReplacementNamed(context, '/onboarding/startup');
+      }
+    } else {
+      Navigator.pushReplacementNamed(context, '/onboarding/tailor-feed');
+    }
   }
 
   @override
@@ -64,7 +86,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            Navigator.pushReplacementNamed(context, '/onboarding/tailor-feed');
+            _onAuthSuccess(context, state.user);
           } else if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.message), backgroundColor: AppColors.error),
@@ -84,12 +106,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     children: [
                       GestureDetector(
                         onTap: () => Navigator.pop(context),
-                        child: const Icon(Icons.arrow_back_ios, size: 18, color: AppColors.primary),
+                        child: const Icon(Icons.arrow_back_ios,
+                            size: 18, color: AppColors.primary),
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'ALU Connect',
-                        style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary),
+                        style: AppTextStyles.headlineSm
+                            .copyWith(color: AppColors.primary),
                       ),
                     ],
                   ),
@@ -98,7 +122,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(height: 6),
                   Text(
                     'Join the ecosystem where students and startups converge to create impact across Africa.',
-                    style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+                    style: AppTextStyles.bodyMd
+                        .copyWith(color: AppColors.onSurfaceVariant),
                   ),
                   const SizedBox(height: 28),
                   Row(
@@ -126,39 +151,63 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   const SizedBox(height: 24),
                   AppTextField(
-                    label: 'Full Name',
+                    label: _role == UserRole.startup ? 'Founder Name' : 'Full Name',
                     hint: 'John Doe',
                     controller: _nameCtrl,
-                    prefixIcon: const Icon(Icons.person_outline, color: AppColors.outline, size: 20),
+                    prefixIcon: const Icon(Icons.person_outline,
+                        color: AppColors.outline, size: 20),
                     validator: (v) =>
                         (v == null || v.trim().isEmpty) ? 'Full name is required' : null,
                   ),
                   const SizedBox(height: 16),
+                  AppTextField(
+                    label: 'Location',
+                    hint: 'Kigali, Rwanda',
+                    controller: _locationCtrl,
+                    prefixIcon: const Icon(Icons.location_on_outlined,
+                        color: AppColors.outline, size: 20),
+                    validator: _role == UserRole.startup
+                        ? (v) => (v == null || v.trim().isEmpty)
+                            ? 'Location is required'
+                            : null
+                        : null,
+                  ),
+                  const SizedBox(height: 16),
                   if (_role == UserRole.startup) ...[
                     AppTextField(
-                      label: 'Venture Name',
+                      label: 'Startup Name',
                       hint: 'My Awesome Startup',
                       controller: _ventureCtrl,
-                      prefixIcon:
-                          const Icon(Icons.business_outlined, color: AppColors.outline, size: 20),
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Venture name is required' : null,
+                      prefixIcon: const Icon(Icons.business_outlined,
+                          color: AppColors.outline, size: 20),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Startup name is required'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                   ],
                   AppTextField(
-                    label: 'ALU Email',
-                    hint: 'j.doe@alueducation.com',
+                    label: _role == UserRole.startup ? 'ALU or Gmail Email' : 'ALU Email',
+                    hint: _role == UserRole.startup
+                        ? 'founder@alueducation.com or @gmail.com'
+                        : 'j.doe@alustudent.com',
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon:
-                        const Icon(Icons.email_outlined, color: AppColors.outline, size: 20),
+                    prefixIcon: const Icon(Icons.email_outlined,
+                        color: AppColors.outline, size: 20),
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) return 'Email is required';
                       final lower = v.toLowerCase().trim();
-                      if (!lower.endsWith('@alustudent.com') &&
-                          !lower.endsWith('@alueducation.com')) {
-                        return 'Only ALU emails allowed';
+                      if (_role == UserRole.startup) {
+                        if (!lower.endsWith('@alueducation.com') &&
+                            !lower.endsWith('@gmail.com')) {
+                          return 'Use @alueducation.com or @gmail.com (testing)';
+                        }
+                      } else {
+                        if (!lower.endsWith('@alustudent.com') &&
+                            !lower.endsWith('@alueducation.com')) {
+                          return 'Only ALU emails allowed';
+                        }
                       }
                       return null;
                     },
@@ -170,36 +219,65 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     controller: _passwordCtrl,
                     showToggle: true,
                     obscureText: true,
-                    prefixIcon: const Icon(Icons.lock_outline, color: AppColors.outline, size: 20),
+                    prefixIcon: const Icon(Icons.lock_outline,
+                        color: AppColors.outline, size: 20),
                     validator: (v) {
                       if (v == null || v.isEmpty) return 'Password is required';
                       if (v.length < 8) return 'Minimum 8 characters';
                       return null;
                     },
                   ),
+                  if (_role == UserRole.startup) ...[
+                    const SizedBox(height: 16),
+                    AppTextField(
+                      label: 'Verification Documents Link',
+                      hint: 'Google Drive link to eLab cert, RDB, or pitch deck',
+                      controller: _docsLinkCtrl,
+                      keyboardType: TextInputType.url,
+                      prefixIcon: const Icon(Icons.folder_open_outlined,
+                          color: AppColors.outline, size: 20),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Please provide a link to your verification documents'
+                          : null,
+                    ),
+                    const SizedBox(height: 8),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 4),
+                      child: Text(
+                        'Upload your eLab certificate, RDB registration, pitch deck, or any document proving your startup is part of the ALU ecosystem. Share via Google Drive with link access enabled.',
+                        style: AppTextStyles.labelMd
+                            .copyWith(color: AppColors.onSurfaceVariant),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   Row(
                     children: [
                       Checkbox(
                         value: _agreedToTerms,
                         activeColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
-                        onChanged: (v) => setState(() => _agreedToTerms = v ?? false),
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(4)),
+                        onChanged: (v) =>
+                            setState(() => _agreedToTerms = v ?? false),
                       ),
                       Expanded(
                         child: RichText(
                           text: TextSpan(
                             text: 'I agree to the ',
-                            style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+                            style: AppTextStyles.bodyMd
+                                .copyWith(color: AppColors.onSurfaceVariant),
                             children: [
                               TextSpan(
                                 text: 'Terms of Service',
-                                style: AppTextStyles.labelLg.copyWith(color: AppColors.primary),
+                                style: AppTextStyles.labelLg
+                                    .copyWith(color: AppColors.primary),
                               ),
                               const TextSpan(text: ' and '),
                               TextSpan(
                                 text: 'Privacy Policy',
-                                style: AppTextStyles.labelLg.copyWith(color: AppColors.primary),
+                                style: AppTextStyles.labelLg
+                                    .copyWith(color: AppColors.primary),
                               ),
                               const TextSpan(text: '.'),
                             ],
@@ -208,12 +286,42 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                     ],
                   ),
+                  if (_role == UserRole.startup) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.06),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppColors.primary.withValues(alpha: 0.2)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Icon(Icons.verified_outlined,
+                              color: AppColors.primary, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              'Your account will be reviewed by ALU Career Development within 24 hours. You\'ll receive an email once approved.',
+                              style: AppTextStyles.labelMd
+                                  .copyWith(color: AppColors.primary),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 24),
                   BlocBuilder<AuthBloc, AuthState>(
                     builder: (context, state) => AppButton(
-                      label: 'Create Account',
+                      label: _role == UserRole.startup
+                          ? 'Submit for Review'
+                          : 'Create Account',
                       isLoading: state is AuthLoading,
-                      icon: const Icon(Icons.arrow_forward, color: Colors.white, size: 18),
+                      icon: const Icon(Icons.arrow_forward,
+                          color: Colors.white, size: 18),
                       onPressed: _submit,
                     ),
                   ),
@@ -224,13 +332,16 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       children: [
                         Text(
                           'Already have an account?  ',
-                          style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurfaceVariant),
+                          style: AppTextStyles.bodyMd
+                              .copyWith(color: AppColors.onSurfaceVariant),
                         ),
                         GestureDetector(
-                          onTap: () => Navigator.pushReplacementNamed(context, '/sign-in'),
+                          onTap: () => Navigator.pushReplacementNamed(
+                              context, '/sign-in'),
                           child: Text(
                             'Log In',
-                            style: AppTextStyles.labelLg.copyWith(color: AppColors.primary),
+                            style: AppTextStyles.labelLg
+                                .copyWith(color: AppColors.primary),
                           ),
                         ),
                       ],
@@ -270,7 +381,9 @@ class _RoleToggle extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary.withValues(alpha: 0.08) : AppColors.surfaceContainerLow,
+          color: isSelected
+              ? AppColors.primary.withValues(alpha: 0.08)
+              : AppColors.surfaceContainerLow,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isSelected ? AppColors.primary : AppColors.outlineVariant,
@@ -291,7 +404,8 @@ class _RoleToggle extends StatelessWidget {
             const SizedBox(height: 2),
             Text(
               subtitle,
-              style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
+              style: AppTextStyles.labelMd
+                  .copyWith(color: AppColors.onSurfaceVariant),
             ),
           ],
         ),

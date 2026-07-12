@@ -12,9 +12,10 @@ class AuthCheckRequested extends AuthEvent {}
 class AuthSignInRequested extends AuthEvent {
   final String email;
   final String password;
-  const AuthSignInRequested({required this.email, required this.password});
+  final UserRole? role;
+  const AuthSignInRequested({required this.email, required this.password, this.role});
   @override
-  List<Object?> get props => [email, password];
+  List<Object?> get props => [email, password, role];
 }
 
 class AuthSignUpRequested extends AuthEvent {
@@ -23,15 +24,19 @@ class AuthSignUpRequested extends AuthEvent {
   final String password;
   final UserRole role;
   final String? ventureName;
+  final String? location;
+  final String? docsLink;
   const AuthSignUpRequested({
     required this.fullName,
     required this.email,
     required this.password,
     required this.role,
     this.ventureName,
+    this.location,
+    this.docsLink,
   });
   @override
-  List<Object?> get props => [fullName, email, role, ventureName];
+  List<Object?> get props => [fullName, email, role, ventureName, location, docsLink];
 }
 
 class AuthSignOutRequested extends AuthEvent {}

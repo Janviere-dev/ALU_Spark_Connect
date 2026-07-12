@@ -21,6 +21,7 @@ class _SignInScreenState extends State<SignInScreen> {
   final _emailCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _keepSignedIn = false;
+  UserRole _selectedRole = UserRole.student;
 
   @override
   void dispose() {
@@ -34,6 +35,7 @@ class _SignInScreenState extends State<SignInScreen> {
     context.read<AuthBloc>().add(AuthSignInRequested(
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
+          role: _selectedRole,
         ));
   }
 
@@ -44,9 +46,22 @@ class _SignInScreenState extends State<SignInScreen> {
       body: BlocListener<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthAuthenticated) {
-            if (!state.user.onboardingComplete) {
-              Navigator.pushReplacementNamed(context, '/onboarding/tailor-feed');
-            } else if (state.user.role == UserRole.student) {
+            final user = state.user;
+            if (user.role == UserRole.admin) {
+              Navigator.pushReplacementNamed(context, '/admin');
+              return;
+            }
+            if (user.role == UserRole.startup && user.status == 'pending') {
+              Navigator.pushReplacementNamed(context, '/pending');
+              return;
+            }
+            if (!user.onboardingComplete) {
+              if (user.role == UserRole.startup) {
+                Navigator.pushReplacementNamed(context, '/onboarding/startup');
+              } else {
+                Navigator.pushReplacementNamed(context, '/onboarding/tailor-feed');
+              }
+            } else if (user.role == UserRole.student) {
               Navigator.pushReplacementNamed(context, '/student/home');
             } else {
               Navigator.pushReplacementNamed(context, '/startup/dashboard');
@@ -120,9 +135,87 @@ class _SignInScreenState extends State<SignInScreen> {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
+                                Text('Sign in as', style: AppTextStyles.labelLg),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _selectedRole = UserRole.student),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 180),
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          decoration: BoxDecoration(
+                                            gradient: _selectedRole == UserRole.student
+                                                ? AppColors.primaryGradient
+                                                : null,
+                                            color: _selectedRole == UserRole.student
+                                                ? null
+                                                : AppColors.surfaceContainerLow,
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: _selectedRole == UserRole.student
+                                                  ? Colors.transparent
+                                                  : AppColors.outlineVariant,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              'Student',
+                                              style: AppTextStyles.labelLg.copyWith(
+                                                color: _selectedRole == UserRole.student
+                                                    ? Colors.white
+                                                    : AppColors.onSurface,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: GestureDetector(
+                                        onTap: () => setState(() => _selectedRole = UserRole.startup),
+                                        child: AnimatedContainer(
+                                          duration: const Duration(milliseconds: 180),
+                                          padding: const EdgeInsets.symmetric(vertical: 10),
+                                          decoration: BoxDecoration(
+                                            gradient: _selectedRole == UserRole.startup
+                                                ? AppColors.primaryGradient
+                                                : null,
+                                            color: _selectedRole == UserRole.startup
+                                                ? null
+                                                : AppColors.surfaceContainerLow,
+                                            borderRadius: BorderRadius.circular(12),
+                                            border: Border.all(
+                                              color: _selectedRole == UserRole.startup
+                                                  ? Colors.transparent
+                                                  : AppColors.outlineVariant,
+                                            ),
+                                          ),
+                                          child: Center(
+                                            child: Text(
+                                              'Startup',
+                                              style: AppTextStyles.labelLg.copyWith(
+                                                color: _selectedRole == UserRole.startup
+                                                    ? Colors.white
+                                                    : AppColors.onSurface,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 20),
                                 AppTextField(
-                                  label: 'ALU Email',
-                                  hint: 'j.example@alustudent.com',
+                                  label: _selectedRole == UserRole.startup
+                                      ? 'Email'
+                                      : 'ALU Email',
+                                  hint: _selectedRole == UserRole.startup
+                                      ? 'founder@alueducation.com or @gmail.com'
+                                      : 'j.example@alustudent.com',
                                   controller: _emailCtrl,
                                   keyboardType: TextInputType.emailAddress,
                                   prefixIcon: const Icon(Icons.email_outlined,
@@ -130,9 +223,16 @@ class _SignInScreenState extends State<SignInScreen> {
                                   validator: (v) {
                                     if (v == null || v.trim().isEmpty) return 'Email is required';
                                     final lower = v.toLowerCase().trim();
-                                    if (!lower.endsWith('@alustudent.com') &&
-                                        !lower.endsWith('@alueducation.com')) {
-                                      return 'Only ALU emails allowed';
+                                    if (_selectedRole == UserRole.startup) {
+                                      if (!lower.endsWith('@alueducation.com') &&
+                                          !lower.endsWith('@gmail.com')) {
+                                        return 'Use @alueducation.com or @gmail.com';
+                                      }
+                                    } else {
+                                      if (!lower.endsWith('@alustudent.com') &&
+                                          !lower.endsWith('@alueducation.com')) {
+                                        return 'Only ALU emails allowed';
+                                      }
                                     }
                                     return null;
                                   },
@@ -220,7 +320,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         const SizedBox(height: 24),
                         Center(
                           child: Text(
-                            '© 2024 ALU Connect. All rights reserved.',
+                            '© 2026 ALU Connect. All rights reserved.',
                             style: AppTextStyles.labelMd
                                 .copyWith(color: AppColors.onSurfaceVariant),
                           ),
@@ -235,48 +335,6 @@ class _SignInScreenState extends State<SignInScreen> {
                             const SizedBox(width: 16),
                             _FooterLink('Community Guidelines'),
                           ],
-                        ),
-                        const SizedBox(height: 24),
-                        Center(
-                          child: GestureDetector(
-                            onTap: () {
-                              _emailCtrl.text = 'amina.okoro@alustudent.com';
-                              _passwordCtrl.text = 'password123';
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Demo: Fill student credentials',
-                                style: AppTextStyles.labelSm
-                                    .copyWith(color: AppColors.onSurfaceVariant),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Center(
-                          child: GestureDetector(
-                            onTap: () {
-                              _emailCtrl.text = 'john.doe@alueducation.com';
-                              _passwordCtrl.text = 'password123';
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                              decoration: BoxDecoration(
-                                color: AppColors.surfaceContainer,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                'Demo: Fill startup credentials',
-                                style: AppTextStyles.labelSm
-                                    .copyWith(color: AppColors.onSurfaceVariant),
-                              ),
-                            ),
-                          ),
                         ),
                         const SizedBox(height: 32),
                       ],
