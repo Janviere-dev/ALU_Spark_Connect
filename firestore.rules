@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ── helpers ───────────────────────────────────────────────────────────────
+    //  helpers 
     function isSignedIn() {
       return request.auth != null;
     }
@@ -14,30 +14,51 @@ service cloud.firestore {
     }
     function isStudent() { return userRole() == 'student'; }
     function isStartup() { return userRole() == 'startup'; }
+    function adminDocIsAdmin(path) {
+      return exists(path)
+        && (get(path).data.get('isAdmin', false) == true
+            || get(path).data.get('role', '') == 'admin');
+    }
+    function isAdmin() {
+      return isSignedIn()
+        && (adminDocIsAdmin(/databases/$(database)/documents/users/$(request.auth.uid))
+            || adminDocIsAdmin(/databases/$(database)/documents/users/$(request.auth.uid + '_student')));
+    }
 
-    // ── users ─────────────────────────────────────────────────────────────────
-    // Students are publicly readable (startups browse talent).
-    // Each user may only write their own document.
-    match /users/{uid} {
+    //  users 
+    // Primary profiles live at users/{uid} (doc ID == Firebase Auth UID).
+    // Secondary profiles (same email, different role) live at users/{uid}_{role};
+    // they carry an authUid field pointing back to the Firebase Auth UID.
+    match /users/{userId} {
       allow read: if isSignedIn();
-      allow create: if isOwner(uid);
-      allow update: if isOwner(uid);
+      allow create: if isOwner(userId)
+                    || (isSignedIn()
+                        && request.resource.data.authUid == request.auth.uid
+                        && userId == request.auth.uid + '_' + request.resource.data.role);
+      allow update: if isOwner(userId)
+                    || (isSignedIn() && resource.data.authUid == request.auth.uid)
+                    || (isAdmin()
+                        && request.resource.data.diff(resource.data)
+                            .affectedKeys().hasOnly(['status']));
       allow delete: if false;
     }
 
-    // ── opportunities ─────────────────────────────────────────────────────────
+    //  opportunities 
     // Any signed-in user can read active opportunities.
     // Only the owning startup may create / update its own postings.
+    // Students may increment applicantCount only (when submitting an application).
     match /opportunities/{oppId} {
       allow read: if isSignedIn();
       allow create: if isStartup()
                     && request.resource.data.startupId == request.auth.uid;
-      allow update: if isStartup()
-                    && resource.data.startupId == request.auth.uid;
+      allow update: if (isStartup() && resource.data.startupId == request.auth.uid)
+                    || (isStudent()
+                        && request.resource.data.diff(resource.data)
+                              .affectedKeys().hasOnly(['applicantCount']));
       allow delete: if false;
     }
 
-    // ── applications ──────────────────────────────────────────────────────────
+    //  applications 
     // Students read their own; startups read applications for their opportunities.
     // Only students can submit; only startups can update status.
     match /applications/{appId} {
@@ -53,7 +74,7 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ── invitations ───────────────────────────────────────────────────────────
+    //  invitations 
     // Only the addressed student or sending startup may read an invitation.
     // Only startups can create; only the student can accept/decline (update status).
     match /invitations/{invId} {
@@ -70,12 +91,19 @@ service cloud.firestore {
       allow delete: if false;
     }
 
-    // ── notifications ─────────────────────────────────────────────────────────
+    //  notifications 
     // Each user reads only their own notifications.
-    // Backend (Cloud Functions / trusted repos) writes via Admin SDK — no client writes.
+    // Startups can write notifications to students (e.g. invitation alerts).
     match /notifications/{notifId} {
-      allow read: if isOwner(resource.data.userId);
-      allow write: if false; // written server-side only
+      allow read: if isSignedIn() && resource.data.userId == request.auth.uid;
+      allow create: if isSignedIn()
+                    && (request.resource.data.userId != request.auth.uid
+                        || isAdmin());
+      allow update: if isSignedIn()
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                        .hasOnly(['isRead']);
+      allow delete: if false;
     }
   }
 }
