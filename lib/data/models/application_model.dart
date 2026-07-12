@@ -40,6 +40,7 @@ class ApplicationModel extends Equatable {
   final String? startupLogoUrl;
   final String pitch;
   final String? cvUrl;
+  final String? duration;
   final ApplicationStatus status;
   final int matchScore;
   final List<String> studentSkills;
@@ -58,6 +59,7 @@ class ApplicationModel extends Equatable {
     this.startupLogoUrl,
     required this.pitch,
     this.cvUrl,
+    this.duration,
     this.status = ApplicationStatus.submitted,
     this.matchScore = 0,
     this.studentSkills = const [],
@@ -86,6 +88,7 @@ class ApplicationModel extends Equatable {
       startupLogoUrl: startupLogoUrl,
       pitch: pitch,
       cvUrl: cvUrl,
+      duration: duration,
       status: status ?? this.status,
       matchScore: matchScore,
       studentSkills: studentSkills,
@@ -106,6 +109,7 @@ class ApplicationModel extends Equatable {
         'startupLogoUrl': startupLogoUrl,
         'pitch': pitch,
         'cvUrl': cvUrl,
+        'duration': duration,
         'status': status.name,
         'matchScore': matchScore,
         'studentSkills': studentSkills,
@@ -125,6 +129,7 @@ class ApplicationModel extends Equatable {
         startupLogoUrl: map['startupLogoUrl'] as String?,
         pitch: map['pitch'] as String,
         cvUrl: map['cvUrl'] as String?,
+        duration: map['duration'] as String?,
         status: ApplicationStatus.values.firstWhere(
             (s) => s.name == map['status'],
             orElse: () => ApplicationStatus.submitted),

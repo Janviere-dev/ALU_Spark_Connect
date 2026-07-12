@@ -1,65 +1,143 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
-import '../mock/mock_data.dart';
+import '../models/notification_model.dart';
 import '../models/opportunity_model.dart';
 
-// Firebase implementation: replace MockDB calls with Firestore collection queries
 class OpportunityRepository {
-  final MockDB _db = MockDB();
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
   final _uuid = const Uuid();
 
-  Future<List<OpportunityModel>> getAll({String? query, String? category}) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    var results = _db.opportunities.where((o) => o.status != OpportunityStatus.closed).toList();
+  CollectionReference<Map<String, dynamic>> get _opps =>
+      _db.collection('opportunities');
+
+  Future<List<OpportunityModel>> getAll({
+    String? query,
+    String? category,
+  }) async {
+    Query<Map<String, dynamic>> q = _opps
+        .where('status', isEqualTo: 'active')
+        .orderBy('postedAt', descending: true);
+
+    if (category != null && category != 'All Opportunities') {
+      q = _opps
+          .where('status', isEqualTo: 'active')
+          .where('category', isEqualTo: category)
+          .orderBy('postedAt', descending: true);
+    }
+
+    final snap = await q.get();
+    var results = snap.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return OpportunityModel.fromMap(data);
+    }).where((o) => !o.isExpired).toList();
 
     if (query != null && query.isNotEmpty) {
-      final q = query.toLowerCase();
+      final ql = query.toLowerCase();
       results = results
           .where((o) =>
-              o.roleTitle.toLowerCase().contains(q) ||
-              o.startupName.toLowerCase().contains(q) ||
-              o.skills.any((s) => s.toLowerCase().contains(q)))
+              o.roleTitle.toLowerCase().contains(ql) ||
+              o.startupName.toLowerCase().contains(ql) ||
+              o.skills.any((s) => s.toLowerCase().contains(ql)))
           .toList();
     }
 
-    if (category != null && category != 'All Opportunities') {
-      results = results.where((o) => o.category == category).toList();
-    }
-
-    results.sort((a, b) => b.postedAt.compareTo(a.postedAt));
     return results;
   }
 
   Future<OpportunityModel?> getById(String id) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    try {
-      return _db.opportunities.firstWhere((o) => o.id == id);
-    } catch (_) {
-      return null;
-    }
+    final doc = await _opps.doc(id).get();
+    if (!doc.exists) return null;
+    final data = doc.data()!;
+    data['id'] = doc.id;
+    return OpportunityModel.fromMap(data);
   }
 
   Future<List<OpportunityModel>> getFeatured() async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _db.opportunities.where((o) => o.isFeatured).toList();
+    final snap = await _opps
+        .where('isFeatured', isEqualTo: true)
+        .where('status', isEqualTo: 'active')
+        .orderBy('postedAt', descending: true)
+        .get();
+    return snap.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return OpportunityModel.fromMap(data);
+    }).toList();
+  }
+
+  Future<List<OpportunityModel>> getMatching({
+    required List<String> skills,
+    required List<String> focusAreas,
+  }) async {
+    final results = <String, OpportunityModel>{};
+
+    if (skills.isNotEmpty) {
+      final snap = await _opps
+          .where('status', isEqualTo: 'active')
+          .where('skills', arrayContainsAny: skills.take(10).toList())
+          .orderBy('postedAt', descending: true)
+          .get();
+      for (final doc in snap.docs) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        results[doc.id] = OpportunityModel.fromMap(data);
+      }
+    }
+
+    for (final area in focusAreas.take(5)) {
+      final snap = await _opps
+          .where('status', isEqualTo: 'active')
+          .where('category', isEqualTo: area)
+          .orderBy('postedAt', descending: true)
+          .limit(10)
+          .get();
+      for (final doc in snap.docs) {
+        if (!results.containsKey(doc.id)) {
+          final data = doc.data();
+          data['id'] = doc.id;
+          results[doc.id] = OpportunityModel.fromMap(data);
+        }
+      }
+    }
+
+    final list = results.values.where((o) => !o.isExpired).toList()
+      ..sort((a, b) => b.postedAt.compareTo(a.postedAt));
+    return list;
   }
 
   Future<List<OpportunityModel>> getRecommended(List<String> skills) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _db.opportunities.where((o) {
-      return o.status == OpportunityStatus.active &&
-          o.skills.any((s) => skills.contains(s));
-    }).take(5).toList();
+    if (skills.isEmpty) return [];
+    final snap = await _opps
+        .where('status', isEqualTo: 'active')
+        .where('skills', arrayContainsAny: skills.take(10).toList())
+        .orderBy('postedAt', descending: true)
+        .limit(5)
+        .get();
+    return snap.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return OpportunityModel.fromMap(data);
+    }).toList();
   }
 
   Future<List<OpportunityModel>> getForStartup(String startupId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _db.getOpportunitiesForStartup(startupId);
+    final snap = await _opps
+        .where('startupId', isEqualTo: startupId)
+        .orderBy('postedAt', descending: true)
+        .get();
+    return snap.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return OpportunityModel.fromMap(data);
+    }).toList();
   }
 
   Future<OpportunityModel> post(OpportunityModel opportunity) async {
-    await Future.delayed(const Duration(milliseconds: 800));
+    final id = _uuid.v4();
+    final now = DateTime.now();
     final withId = OpportunityModel(
-      id: _uuid.v4(),
+      id: id,
       startupId: opportunity.startupId,
       startupName: opportunity.startupName,
       roleTitle: opportunity.roleTitle,
@@ -75,15 +153,64 @@ class OpportunityRepository {
       compensation: opportunity.compensation,
       status: OpportunityStatus.active,
       isFeatured: false,
-      postedAt: DateTime.now(),
+      postedAt: now,
+      deadline: opportunity.deadline,
     );
-    _db.addOpportunity(withId);
+
+    final batch = _db.batch();
+    batch.set(_opps.doc(id), withId.toMap());
+
+    // Notify open students whose skills overlap with this opportunity
+    if (opportunity.skills.isNotEmpty) {
+      final studentsSnap = await _db
+          .collection('users')
+          .where('role', isEqualTo: 'student')
+          .where('isOpenToOpportunities', isEqualTo: true)
+          .get();
+
+      for (final doc in studentsSnap.docs) {
+        final studentSkills =
+            List<String>.from(doc.data()['skills'] as List? ?? []);
+        final hasMatch =
+            opportunity.skills.any((s) => studentSkills.contains(s));
+        if (!hasMatch) continue;
+        final notifId = _uuid.v4();
+        batch.set(
+          _db.collection('notifications').doc(notifId),
+          NotificationModel(
+            id: notifId,
+            userId: doc.id,
+            type: NotificationType.newOpportunity,
+            title: 'New role: ${opportunity.roleTitle}',
+            body:
+                '${opportunity.startupName} just posted a role that matches your skills.',
+            isPriority: false,
+            actionId: id,
+            createdAt: now,
+          ).toMap(),
+        );
+      }
+    }
+
+    await batch.commit();
     return withId;
   }
 
+  Future<void> update(OpportunityModel opportunity) async {
+    await _opps.doc(opportunity.id).update({
+      'roleTitle': opportunity.roleTitle,
+      'description': opportunity.description,
+      'category': opportunity.category,
+      'commitment': opportunity.commitment,
+      'location': opportunity.location,
+      'isRemoteFriendly': opportunity.isRemoteFriendly,
+      'compensation': opportunity.compensation,
+      'skills': opportunity.skills,
+      'deadline': opportunity.deadline?.millisecondsSinceEpoch,
+    });
+  }
+
   Future<void> updateStatus(String id, OpportunityStatus status) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    final opp = _db.opportunities.firstWhere((o) => o.id == id);
-    _db.updateOpportunity(opp.copyWith(status: status));
+    await _opps.doc(id).update({'status': status.name});
   }
 }

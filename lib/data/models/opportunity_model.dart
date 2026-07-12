@@ -23,6 +23,7 @@ class OpportunityModel extends Equatable {
   final OpportunityStatus status;
   final bool isFeatured;
   final DateTime postedAt;
+  final DateTime? deadline;
 
   const OpportunityModel({
     required this.id,
@@ -45,7 +46,20 @@ class OpportunityModel extends Equatable {
     this.status = OpportunityStatus.active,
     this.isFeatured = false,
     required this.postedAt,
+    this.deadline,
   });
+
+  bool get isExpired =>
+      deadline != null && deadline!.isBefore(DateTime.now());
+
+  String get deadlineLabel {
+    if (deadline == null) return 'Open';
+    if (isExpired) return 'Closed';
+    final diff = deadline!.difference(DateTime.now());
+    if (diff.inDays == 0) return 'Closes today';
+    if (diff.inDays == 1) return 'Closes tomorrow';
+    return 'Closes in ${diff.inDays}d';
+  }
 
   String get postedTimeAgo {
     final diff = DateTime.now().difference(postedAt);
@@ -71,6 +85,7 @@ class OpportunityModel extends Equatable {
     int? viewCount,
     OpportunityStatus? status,
     bool? isFeatured,
+    DateTime? deadline,
   }) {
     return OpportunityModel(
       id: id,
@@ -93,6 +108,7 @@ class OpportunityModel extends Equatable {
       status: status ?? this.status,
       isFeatured: isFeatured ?? this.isFeatured,
       postedAt: postedAt,
+      deadline: deadline ?? this.deadline,
     );
   }
 
@@ -117,6 +133,7 @@ class OpportunityModel extends Equatable {
         'status': status.name,
         'isFeatured': isFeatured,
         'postedAt': postedAt.millisecondsSinceEpoch,
+        'deadline': deadline?.millisecondsSinceEpoch,
       };
 
   factory OpportunityModel.fromMap(Map<String, dynamic> map) => OpportunityModel(
@@ -143,6 +160,9 @@ class OpportunityModel extends Equatable {
         isFeatured: map['isFeatured'] as bool? ?? false,
         postedAt: DateTime.fromMillisecondsSinceEpoch(
             map['postedAt'] as int? ?? 0),
+        deadline: map['deadline'] != null
+            ? DateTime.fromMillisecondsSinceEpoch(map['deadline'] as int)
+            : null,
       );
 
   @override

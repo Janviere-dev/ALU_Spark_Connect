@@ -1,12 +1,15 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:uuid/uuid.dart';
-import '../mock/mock_data.dart';
 import '../models/application_model.dart';
 import '../models/invitation_model.dart';
+import '../models/notification_model.dart';
 
-// Firebase implementation: replace MockDB calls with Firestore
 class InvitationRepository {
-  final MockDB _db = MockDB();
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
   final _uuid = const Uuid();
+
+  CollectionReference<Map<String, dynamic>> get _invitations =>
+      _db.collection('invitations');
 
   Future<InvitationModel> send({
     required String startupId,
@@ -17,9 +20,9 @@ class InvitationRepository {
     required String roleTitle,
     required String message,
   }) async {
-    await Future.delayed(const Duration(milliseconds: 600));
+    final id = _uuid.v4();
     final inv = InvitationModel(
-      id: _uuid.v4(),
+      id: id,
       startupId: startupId,
       startupName: startupName,
       studentId: studentId,
@@ -29,32 +32,56 @@ class InvitationRepository {
       message: message,
       createdAt: DateTime.now(),
     );
-    _db.addInvitation(inv);
+
+    final notifId = _uuid.v4();
+    final notif = NotificationModel(
+      id: notifId,
+      userId: studentId,
+      type: NotificationType.interviewInvitation,
+      title: 'Invitation from $startupName',
+      body: 'You\'ve been invited to apply for $roleTitle.',
+      isPriority: true,
+      actionId: id,
+      createdAt: DateTime.now(),
+    );
+
+    final batch = _db.batch();
+    batch.set(_invitations.doc(id), inv.toMap());
+    batch.set(_db.collection('notifications').doc(notifId), notif.toMap());
+    await batch.commit();
     return inv;
   }
 
   Future<List<InvitationModel>> getForStudent(String studentId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _db.getInvitationsForStudent(studentId);
+    final snap = await _invitations
+        .where('studentId', isEqualTo: studentId)
+        .orderBy('createdAt', descending: true)
+        .get();
+    return _fromSnap(snap);
   }
 
   Future<List<InvitationModel>> getForStartup(String startupId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return _db.getInvitationsForStartup(startupId);
+    final snap = await _invitations
+        .where('startupId', isEqualTo: startupId)
+        .orderBy('createdAt', descending: true)
+        .get();
+    return _fromSnap(snap);
   }
 
   Future<InvitationModel> accept(String invitationId) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    final inv = _db.findInvitation(invitationId);
-    if (inv == null) throw Exception('Invitation not found');
+    final doc = await _invitations.doc(invitationId).get();
+    if (!doc.exists) throw Exception('Invitation not found.');
+    final data = doc.data()!..['id'] = invitationId;
+    final inv = InvitationModel.fromMap(data);
+
     final updated = inv.copyWith(
       status: InvitationStatus.accepted,
       respondedAt: DateTime.now(),
     );
-    _db.updateInvitation(updated);
-    // Auto-create an application
-    _db.addApplication(ApplicationModel(
-      id: _uuid.v4(),
+
+    final appId = _uuid.v4();
+    final app = ApplicationModel(
+      id: appId,
       studentId: inv.studentId,
       studentName: inv.studentName,
       studentEmail: '',
@@ -62,22 +89,78 @@ class InvitationRepository {
       roleTitle: inv.roleTitle,
       startupName: inv.startupName,
       pitch: 'Accepted via invitation.',
-      status: ApplicationStatus.interviewScheduled,
+      status: ApplicationStatus.submitted,
       matchScore: 95,
       appliedAt: DateTime.now(),
-    ));
+    );
+
+    final respondedAt = DateTime.now();
+    final notifId = _uuid.v4();
+    final notif = NotificationModel(
+      id: notifId,
+      userId: inv.startupId,
+      type: NotificationType.newApplication,
+      title: '${inv.studentName} accepted your invitation!',
+      body: '${inv.studentName} has accepted and applied for ${inv.roleTitle}.',
+      isPriority: true,
+      actionId: inv.opportunityId,
+      createdAt: respondedAt,
+    );
+
+    final batch = _db.batch();
+    batch.update(_invitations.doc(invitationId), {
+      'status': 'accepted',
+      'respondedAt': respondedAt.millisecondsSinceEpoch,
+    });
+    batch.set(_db.collection('applications').doc(appId), app.toMap());
+    batch.update(
+      _db.collection('opportunities').doc(inv.opportunityId),
+      {'applicantCount': FieldValue.increment(1)},
+    );
+    batch.set(_db.collection('notifications').doc(notifId), notif.toMap());
+    await batch.commit();
     return updated;
   }
 
   Future<InvitationModel> decline(String invitationId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    final inv = _db.findInvitation(invitationId);
-    if (inv == null) throw Exception('Invitation not found');
-    final updated = inv.copyWith(
-      status: InvitationStatus.declined,
-      respondedAt: DateTime.now(),
+    final doc = await _invitations.doc(invitationId).get();
+    if (!doc.exists) throw Exception('Invitation not found.');
+    final data = doc.data()!..['id'] = invitationId;
+    final inv = InvitationModel.fromMap(data);
+    final respondedAt = DateTime.now();
+
+    final notifId = _uuid.v4();
+    final notif = NotificationModel(
+      id: notifId,
+      userId: inv.startupId,
+      type: NotificationType.applicationStatusChange,
+      title: '${inv.studentName} declined your invitation',
+      body: '${inv.studentName} has declined the invitation to apply for ${inv.roleTitle}.',
+      isPriority: false,
+      actionId: invitationId,
+      createdAt: respondedAt,
     );
-    _db.updateInvitation(updated);
-    return updated;
+
+    final batch = _db.batch();
+    batch.update(_invitations.doc(invitationId), {
+      'status': 'declined',
+      'respondedAt': respondedAt.millisecondsSinceEpoch,
+    });
+    batch.set(_db.collection('notifications').doc(notifId), notif.toMap());
+    await batch.commit();
+
+    return inv.copyWith(
+      status: InvitationStatus.declined,
+      respondedAt: respondedAt,
+    );
+  }
+
+  List<InvitationModel> _fromSnap(
+      QuerySnapshot<Map<String, dynamic>> snap) {
+    return snap.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return InvitationModel.fromMap(data);
+    }).toList();
   }
 }

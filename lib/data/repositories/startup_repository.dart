@@ -1,47 +1,79 @@
-import '../mock/mock_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import '../models/opportunity_model.dart';
 import '../models/user_model.dart';
 
-// Firebase implementation: replace MockDB calls with Firestore
 class StartupRepository {
-  final MockDB _db = MockDB();
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<List<UserModel>> getOpenStudents({String? skillFilter, String? focusFilter}) async {
-    await Future.delayed(const Duration(milliseconds: 500));
-    var students = _db.getOpenStudents();
+  CollectionReference<Map<String, dynamic>> get _users =>
+      _db.collection('users');
+  CollectionReference<Map<String, dynamic>> get _opps =>
+      _db.collection('opportunities');
+
+  Future<List<UserModel>> getOpenStudents({
+    String? skillFilter,
+    String? focusFilter,
+  }) async {
+    Query<Map<String, dynamic>> q = _users
+        .where('role', isEqualTo: 'student')
+        .where('isOpenToOpportunities', isEqualTo: true);
 
     if (skillFilter != null && skillFilter.isNotEmpty) {
-      students = students
-          .where((s) => s.skills.any((sk) => sk.toLowerCase().contains(skillFilter.toLowerCase())))
-          .toList();
+      q = q.where('skills', arrayContains: skillFilter);
     }
-
     if (focusFilter != null && focusFilter != 'All') {
-      students = students.where((s) => s.focusAreas.contains(focusFilter)).toList();
+      q = q.where('focusAreas', arrayContains: focusFilter);
     }
 
-    return students;
+    final snap = await q.get();
+    return snap.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return UserModel.fromMap(data);
+    }).toList();
   }
 
   Future<Map<String, dynamic>> getDashboardStats(String startupId) async {
-    await Future.delayed(const Duration(milliseconds: 600));
-    final postings = _db.getOpportunitiesForStartup(startupId);
-    final activeRoles = postings.where((p) => p.status.name == 'active').length;
-    final totalApplications = postings.fold<int>(0, (sum, p) => sum + p.applicantCount);
+    final snap = await _opps
+        .where('startupId', isEqualTo: startupId)
+        .get();
+
+    final postings = snap.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return OpportunityModel.fromMap(data);
+    }).toList();
+
+    final now = DateTime.now();
+    final startOfToday = DateTime(now.year, now.month, now.day);
+
+    final activeRoles =
+        postings.where((p) => p.status == OpportunityStatus.active).length;
+    final totalApplications =
+        postings.fold<int>(0, (acc, p) => acc + p.applicantCount);
+    final newToday = postings
+        .where((p) => p.postedAt.isAfter(startOfToday))
+        .length;
 
     return {
       'activeRoles': activeRoles,
       'totalApplications': totalApplications,
       'avgTimeToHire': 14,
-      'newApplicationsToday': 12,
+      'newApplicationsToday': newToday,
+      'postings': postings,
     };
   }
 
-  Future<List<Map<String, String>>> getRecentActivity(String startupId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    return [
-      {'name': 'Michael Adebayo', 'action': 'applied for Software Engineering', 'time': '2 hours ago'},
-      {'name': 'Sarah Lim', 'action': 'scheduled an interview for UI/UX Design', 'time': '4 hours ago'},
-      {'name': 'Kwame Asante', 'action': 'applied for Product Design Lead', 'time': '1 day ago'},
-    ];
+  Future<UserModel?> getPublicProfile(String startupId) async {
+    final doc = await _users.doc(startupId).get();
+    if (!doc.exists) return null;
+    final data = doc.data()!;
+    data['id'] = doc.id;
+    return UserModel.fromMap(data);
+  }
+
+  Future<List<Map<String, String>>> getRecentActivity(
+      String startupId) async {
+    return [];
   }
 }

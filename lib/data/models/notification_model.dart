@@ -3,10 +3,14 @@ import 'package:equatable/equatable.dart';
 enum NotificationType {
   interviewInvitation,
   applicationStatusChange,
+  newApplication,
   newMessage,
   deadlineApproaching,
   profileAchievement,
   systemUpdate,
+  newOpportunity,
+  startupApproved,
+  startupRejected,
 }
 
 class NotificationModel extends Equatable {

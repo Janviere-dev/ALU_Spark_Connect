@@ -1,24 +1,48 @@
-import '../mock/mock_data.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/notification_model.dart';
 
-// Firebase implementation: replace MockDB calls with Firestore subcollection
 class NotificationRepository {
-  final MockDB _db = MockDB();
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  CollectionReference<Map<String, dynamic>> get _notifs =>
+      _db.collection('notifications');
 
   Future<List<NotificationModel>> getForUser(String userId) async {
-    await Future.delayed(const Duration(milliseconds: 400));
-    final list = _db.getNotificationsForUser(userId);
-    list.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return list;
+    final snap = await _notifs
+        .where('userId', isEqualTo: userId)
+        .orderBy('createdAt', descending: true)
+        .limit(50)
+        .get();
+    return snap.docs.map((d) {
+      final data = d.data();
+      data['id'] = d.id;
+      return NotificationModel.fromMap(data);
+    }).toList();
   }
 
   Future<int> getUnreadCount(String userId) async {
-    final list = await getForUser(userId);
-    return list.where((n) => !n.isRead).length;
+    final snap = await _notifs
+        .where('userId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .count()
+        .get();
+    return snap.count ?? 0;
+  }
+
+  Future<void> markRead(String notificationId) async {
+    await _notifs.doc(notificationId).update({'isRead': true});
   }
 
   Future<void> markAllRead(String userId) async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    _db.markAllNotificationsRead(userId);
+    final snap = await _notifs
+        .where('userId', isEqualTo: userId)
+        .where('isRead', isEqualTo: false)
+        .get();
+    if (snap.docs.isEmpty) return;
+    final batch = _db.batch();
+    for (final doc in snap.docs) {
+      batch.update(doc.reference, {'isRead': true});
+    }
+    await batch.commit();
   }
 }
