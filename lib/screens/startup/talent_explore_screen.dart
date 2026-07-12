@@ -9,7 +9,9 @@ import '../../blocs/startup/startup_state.dart';
 import '../../core/constants/app_constants.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../data/models/opportunity_model.dart';
 import '../../data/models/user_model.dart';
+import '../../data/repositories/opportunity_repository.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/send_invitation_sheet.dart';
 
@@ -23,11 +25,21 @@ class TalentExploreScreen extends StatefulWidget {
 class _TalentExploreScreenState extends State<TalentExploreScreen> {
   String? _selectedSkill;
   String? _selectedFocus;
+  List<OpportunityModel> _myOpportunities = [];
 
   @override
   void initState() {
     super.initState();
-    context.read<StartupCubit>().loadTalent();
+    _loadMyOpportunities();
+  }
+
+  Future<void> _loadMyOpportunities() async {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is! AuthAuthenticated) return;
+    final opps = await context
+        .read<OpportunityRepository>()
+        .getForStartup(authState.user.id);
+    if (mounted) setState(() => _myOpportunities = opps);
   }
 
   @override
@@ -147,6 +159,7 @@ class _TalentExploreScreenState extends State<TalentExploreScreen> {
                       student: state.students[index],
                       startupId: startupId,
                       startupName: startupName,
+                      myOpportunities: _myOpportunities,
                     ),
                   );
                 }
@@ -203,11 +216,13 @@ class _StudentCard extends StatelessWidget {
   final UserModel student;
   final String startupId;
   final String startupName;
+  final List<OpportunityModel> myOpportunities;
 
   const _StudentCard({
     required this.student,
     required this.startupId,
     required this.startupName,
+    required this.myOpportunities,
   });
 
   @override
@@ -319,6 +334,7 @@ class _StudentCard extends StatelessWidget {
                         student: student,
                         startupId: startupId,
                         startupName: startupName,
+                        opportunities: myOpportunities,
                       ),
                     ),
                   ),

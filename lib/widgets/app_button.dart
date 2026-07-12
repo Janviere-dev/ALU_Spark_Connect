@@ -10,6 +10,7 @@ class AppButton extends StatelessWidget {
   final Widget? icon;
   final double? width;
   final Color? backgroundColor;
+  final Color? labelColor;
 
   const AppButton({
     super.key,
@@ -20,6 +21,7 @@ class AppButton extends StatelessWidget {
     this.icon,
     this.width,
     this.backgroundColor,
+    this.labelColor,
   });
 
   @override
@@ -73,11 +75,13 @@ class AppButton extends StatelessWidget {
         ),
       );
     }
+    final resolvedColor = labelColor ??
+        (isOutlined ? AppColors.primary : Colors.white);
     if (icon != null) {
       return Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: AppTextStyles.labelLg.copyWith(color: Colors.white)),
+          Text(label, style: AppTextStyles.labelLg.copyWith(color: resolvedColor)),
           const SizedBox(width: 8),
           icon!,
         ],
@@ -85,9 +89,7 @@ class AppButton extends StatelessWidget {
     }
     return Text(
       label,
-      style: isOutlined
-          ? AppTextStyles.labelLg.copyWith(color: AppColors.primary)
-          : AppTextStyles.labelLg.copyWith(color: Colors.white),
+      style: AppTextStyles.labelLg.copyWith(color: resolvedColor),
     );
   }
 }

@@ -44,6 +44,30 @@ class OpportunityCubit extends Cubit<OpportunityState> {
     }
   }
 
+  Future<void> loadMatching({
+    required List<String> skills,
+    required List<String> focusAreas,
+  }) async {
+    emit(OpportunityLoading());
+    try {
+      final opps = await _repo.getMatching(
+          skills: skills, focusAreas: focusAreas);
+      emit(OpportunityLoaded(opportunities: opps));
+    } catch (e) {
+      emit(OpportunityError(e.toString()));
+    }
+  }
+
+  Future<void> loadForStartup(String startupId) async {
+    emit(OpportunityLoading());
+    try {
+      final opps = await _repo.getForStartup(startupId);
+      emit(OpportunityLoaded(opportunities: opps));
+    } catch (e) {
+      emit(OpportunityError(e.toString()));
+    }
+  }
+
   Future<void> loadDetail(String id, String studentId) async {
     emit(OpportunityLoading());
     try {

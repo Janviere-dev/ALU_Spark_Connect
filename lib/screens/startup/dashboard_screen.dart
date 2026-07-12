@@ -8,12 +8,20 @@ import '../../blocs/startup/startup_cubit.dart';
 import '../../blocs/startup/startup_state.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
+import '../../data/models/opportunity_model.dart';
 import '../../widgets/app_header.dart';
 import '../../widgets/opportunity_card.dart';
 import '../../widgets/section_header.dart';
 
 class StartupDashboardScreen extends StatefulWidget {
-  const StartupDashboardScreen({super.key});
+  final VoidCallback? onSwitchToTalent;
+  final VoidCallback? onSwitchToApplicants;
+
+  const StartupDashboardScreen({
+    super.key,
+    this.onSwitchToTalent,
+    this.onSwitchToApplicants,
+  });
 
   @override
   State<StartupDashboardScreen> createState() => _StartupDashboardScreenState();
@@ -28,6 +36,14 @@ class _StartupDashboardScreenState extends State<StartupDashboardScreen> {
       context.read<StartupCubit>().loadDashboard(authState.user.id);
       context.read<NotificationCubit>().load(authState.user.id);
     }
+  }
+
+  String _greeting(String? fullName) {
+    final hour = DateTime.now().hour;
+    final first = fullName?.split(' ').first ?? 'Founder';
+    if (hour < 12) return 'Good morning,\n$first!';
+    if (hour < 17) return 'Good afternoon,\n$first!';
+    return 'Good evening,\n$first!';
   }
 
   @override
@@ -70,51 +86,73 @@ class _StartupDashboardScreenState extends State<StartupDashboardScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-                  // Hero header
+                  // Hero greeting card
                   Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       gradient: AppColors.darkHeroGradient,
-                      borderRadius: BorderRadius.circular(20),
+                      borderRadius: BorderRadius.circular(24),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.primary.withValues(alpha: 0.4),
-                                    borderRadius: BorderRadius.circular(20),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _greeting(user?.fullName),
+                                    style: AppTextStyles.headlineLg.copyWith(
+                                      color: Colors.white,
+                                      height: 1.2,
+                                    ),
                                   ),
-                                  child: Text(
-                                    'FOUNDER DASHBOARD',
-                                    style: AppTextStyles.labelSm.copyWith(color: Colors.white),
+                                  const SizedBox(height: 6),
+                                  Text(
+                                    user?.ventureName ?? 'Your Venture',
+                                    style: AppTextStyles.bodyLg.copyWith(
+                                      color: Colors.white.withValues(alpha: 0.65),
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  user?.ventureName ?? 'Your Venture',
-                                  style: AppTextStyles.headlineMd.copyWith(color: Colors.white),
-                                ),
-                                Text(
-                                  user?.fullName ?? '',
-                                  style: AppTextStyles.bodyMd.copyWith(
-                                      color: Colors.white.withValues(alpha: 0.7)),
-                                ),
-                              ],
+                                  const SizedBox(height: 10),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.trending_up_rounded,
+                                        color: AppColors.primary.withValues(alpha: 0.9),
+                                        size: 15,
+                                      ),
+                                      const SizedBox(width: 5),
+                                      Text(
+                                        state.totalApplications > 0
+                                            ? '${state.totalApplications} students waiting to join'
+                                            : 'Ready to find great talent',
+                                        style: AppTextStyles.labelMd.copyWith(
+                                          color: Colors.white.withValues(alpha: 0.6),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 12),
                             Container(
-                              width: 52,
-                              height: 52,
+                              width: 56,
+                              height: 56,
                               decoration: BoxDecoration(
                                 gradient: AppColors.primaryGradient,
                                 shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.primary.withValues(alpha: 0.4),
+                                    blurRadius: 12,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
                               ),
                               child: Center(
                                 child: Text(
@@ -134,7 +172,7 @@ class _StartupDashboardScreenState extends State<StartupDashboardScreen> {
                             ),
                             const SizedBox(width: 10),
                             _StatPill(
-                              label: 'Applications',
+                              label: 'Applicants',
                               value: state.totalApplications.toString(),
                             ),
                             const SizedBox(width: 10),
@@ -165,7 +203,11 @@ class _StartupDashboardScreenState extends State<StartupDashboardScreen> {
                           icon: Icons.people_outline,
                           label: 'Browse\nTalent',
                           gradient: AppColors.pinkGradient,
-                          onTap: () {},
+                          onTap: () {
+                            if (widget.onSwitchToTalent != null) {
+                              widget.onSwitchToTalent!();
+                            }
+                          },
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -179,7 +221,11 @@ class _StartupDashboardScreenState extends State<StartupDashboardScreen> {
                               AppColors.secondary.withValues(alpha: 0.7)
                             ],
                           ),
-                          onTap: () {},
+                          onTap: () {
+                            if (widget.onSwitchToApplicants != null) {
+                              widget.onSwitchToApplicants!();
+                            }
+                          },
                         ),
                       ),
                     ],
@@ -195,10 +241,38 @@ class _StartupDashboardScreenState extends State<StartupDashboardScreen> {
                     ...state.postings.map(
                       (opp) => Padding(
                         padding: const EdgeInsets.only(bottom: 10),
-                        child: OpportunityCard(
-                          opportunity: opp,
-                          onTap: () => Navigator.pushNamed(context, '/startup/applicants',
-                              arguments: opp.id),
+                        child: Stack(
+                          children: [
+                            OpportunityCard(
+                              opportunity: opp,
+                              onTap: () => Navigator.pushNamed(
+                                  context, '/startup/opportunity/${opp.id}'),
+                            ),
+                            if (opp.isExpired ||
+                                opp.status == OpportunityStatus.closed)
+                              Positioned(
+                                top: 10,
+                                right: 10,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 8, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.error
+                                        .withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(10),
+                                    border: Border.all(
+                                      color: AppColors.error
+                                          .withValues(alpha: 0.3),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Closed',
+                                    style: AppTextStyles.labelSm
+                                        .copyWith(color: AppColors.error),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
                     ),

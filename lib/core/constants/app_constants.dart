@@ -2,6 +2,12 @@ class AppConstants {
   static const List<String> allowedEmailDomains = [
     'alustudent.com',
     'alueducation.com',
+    'gmail.com', // testing phase only
+  ];
+
+  static const List<String> startupEmailDomains = [
+    'alueducation.com',
+    'gmail.com', // testing phase only
   ];
 
   static const List<String> focusAreas = [

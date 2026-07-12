@@ -38,10 +38,14 @@ class _StudentApplicationsScreenState extends State<StudentApplicationsScreen> {
       backgroundColor: AppColors.background,
       appBar: ALUAppBar(
         showNotification: true,
-        showSettings: false,
-        userInitials: 'JM',
+        showSettings: true,
+        userInitials: (context.read<AuthBloc>().state is AuthAuthenticated)
+            ? (context.read<AuthBloc>().state as AuthAuthenticated).user.initials
+            : 'U',
         notificationCount: 3,
         onNotification: () => Navigator.pushNamed(context, '/student/notifications'),
+        onSettings: () => Navigator.pushNamed(context, '/student/settings'),
+        onAvatar: () => Navigator.pushNamed(context, '/student/profile'),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20),

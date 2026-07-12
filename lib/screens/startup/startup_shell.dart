@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
 import '../../blocs/auth/auth_state.dart';
 import '../../blocs/bookmark/bookmark_cubit.dart';
+import '../../blocs/startup/startup_cubit.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import 'dashboard_screen.dart';
@@ -20,13 +21,7 @@ class StartupShell extends StatefulWidget {
 
 class _StartupShellState extends State<StartupShell> {
   late int _currentIndex;
-
-  final _screens = const [
-    StartupDashboardScreen(),
-    TalentExploreScreen(),
-    ApplicantsScreen(),
-    StartupSettingsScreen(),
-  ];
+  late List<Widget> _screens;
 
   @override
   void initState() {
@@ -36,9 +31,27 @@ class _StartupShellState extends State<StartupShell> {
     if (authState is AuthAuthenticated) {
       context.read<BookmarkCubit>().load(authState.user.id);
     }
+    // Pre-load talent if that is the opening tab
+    if (widget.initialIndex == 1) {
+      context.read<StartupCubit>().loadTalent();
+    }
+    _screens = [
+      StartupDashboardScreen(
+        onSwitchToTalent: () => _onTap(1),
+        onSwitchToApplicants: () => _onTap(2),
+      ),
+      const TalentExploreScreen(),
+      const ApplicantsScreen(),
+      const StartupSettingsScreen(),
+    ];
   }
 
-  void _onTap(int index) => setState(() => _currentIndex = index);
+  void _onTap(int index) {
+    setState(() => _currentIndex = index);
+    if (index == 1) {
+      context.read<StartupCubit>().loadTalent();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {

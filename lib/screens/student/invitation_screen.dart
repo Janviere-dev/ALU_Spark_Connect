@@ -235,6 +235,7 @@ class _InvitationScreenState extends State<InvitationScreen> {
                   AppButton(
                     label: 'Decline',
                     isOutlined: true,
+                    labelColor: AppColors.error,
                     icon: const Icon(Icons.cancel_outlined,
                         color: AppColors.error, size: 18),
                     onPressed: () => context

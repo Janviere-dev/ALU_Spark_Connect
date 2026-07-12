@@ -3,7 +3,6 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../blocs/invitation/invitation_cubit.dart';
 import '../core/theme/app_colors.dart';
 import '../core/theme/app_text_styles.dart';
-import '../data/mock/mock_data.dart';
 import '../data/models/opportunity_model.dart';
 import '../data/models/user_model.dart';
 import 'app_button.dart';
@@ -12,12 +11,14 @@ class SendInvitationSheet extends StatefulWidget {
   final UserModel student;
   final String startupId;
   final String startupName;
+  final List<OpportunityModel> opportunities;
 
   const SendInvitationSheet({
     super.key,
     required this.student,
     required this.startupId,
     required this.startupName,
+    required this.opportunities,
   });
 
   @override
@@ -27,13 +28,14 @@ class SendInvitationSheet extends StatefulWidget {
 class _SendInvitationSheetState extends State<SendInvitationSheet> {
   final _messageCtrl = TextEditingController();
   OpportunityModel? _selectedOpportunity;
-  List<OpportunityModel> _opportunities = [];
+  List<OpportunityModel> get _opportunities => widget.opportunities;
 
   @override
   void initState() {
     super.initState();
-    _opportunities =
-        MockDB().getOpportunitiesForStartup(widget.startupId);
+    if (widget.opportunities.isNotEmpty) {
+      _selectedOpportunity = widget.opportunities.first;
+    }
   }
 
   @override
@@ -150,51 +152,60 @@ class _SendInvitationSheetState extends State<SendInvitationSheet> {
                 ),
               )
             else
-              ...(_opportunities.map((opp) {
-                final selected = _selectedOpportunity?.id == opp.id;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedOpportunity = opp),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    margin: const EdgeInsets.only(bottom: 8),
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? AppColors.primary.withValues(alpha: 0.08)
-                          : AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: selected
-                            ? AppColors.primary
-                            : AppColors.outlineVariant,
-                        width: selected ? 1.5 : 1,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(opp.roleTitle,
-                                  style: AppTextStyles.labelLg),
-                              Text(
-                                opp.category,
-                                style: AppTextStyles.labelMd.copyWith(
-                                    color: AppColors.onSurfaceVariant),
+              Container(
+                decoration: BoxDecoration(
+                  border: Border.all(color: AppColors.outlineVariant),
+                  borderRadius: BorderRadius.circular(12),
+                  color: AppColors.surfaceContainerLow,
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                child: DropdownButtonHideUnderline(
+                  child: DropdownButton<OpportunityModel>(
+                    value: _selectedOpportunity,
+                    isExpanded: true,
+                    icon: const Icon(Icons.keyboard_arrow_down,
+                        color: AppColors.onSurfaceVariant),
+                    borderRadius: BorderRadius.circular(12),
+                    style: AppTextStyles.labelLg
+                        .copyWith(color: AppColors.onSurface),
+                    selectedItemBuilder: (context) =>
+                        _opportunities.map((opp) => Align(
+                              alignment: Alignment.centerLeft,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(opp.roleTitle,
+                                      style: AppTextStyles.labelLg),
+                                  Text(opp.category,
+                                      style: AppTextStyles.labelMd.copyWith(
+                                          color: AppColors.onSurfaceVariant)),
+                                ],
                               ),
-                            ],
+                            )).toList(),
+                    items: _opportunities
+                        .map(
+                          (opp) => DropdownMenuItem<OpportunityModel>(
+                            value: opp,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(opp.roleTitle,
+                                    style: AppTextStyles.labelLg),
+                                Text(opp.category,
+                                    style: AppTextStyles.labelMd.copyWith(
+                                        color: AppColors.onSurfaceVariant)),
+                              ],
+                            ),
                           ),
-                        ),
-                        if (selected)
-                          const Icon(Icons.check_circle,
-                              color: AppColors.primary, size: 20),
-                      ],
-                    ),
+                        )
+                        .toList(),
+                    onChanged: (opp) =>
+                        setState(() => _selectedOpportunity = opp),
                   ),
-                );
-              })),
+                ),
+              ),
             const SizedBox(height: 16),
             Text('Personal Message', style: AppTextStyles.labelLg),
             const SizedBox(height: 8),

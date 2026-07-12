@@ -45,10 +45,14 @@ class _StudentExploreScreenState extends State<StudentExploreScreen> {
       backgroundColor: AppColors.background,
       appBar: ALUAppBar(
         showNotification: true,
-        showSettings: false,
-        userInitials: 'JM',
+        showSettings: true,
+        userInitials: (context.read<AuthBloc>().state is AuthAuthenticated)
+            ? (context.read<AuthBloc>().state as AuthAuthenticated).user.initials
+            : 'U',
         notificationCount: 3,
         onNotification: () => Navigator.pushNamed(context, '/student/notifications'),
+        onSettings: () => Navigator.pushNamed(context, '/student/settings'),
+        onAvatar: () => Navigator.pushNamed(context, '/student/profile'),
       ),
       body: Column(
         children: [
@@ -148,7 +152,8 @@ class _StudentExploreScreenState extends State<StudentExploreScreen> {
                         );
                       }),
                       const SizedBox(height: 16),
-                      _BottomBannerRow(),
+                      _BottomBannerRow(
+                          matchCount: state.recommended.length),
                       const SizedBox(height: 24),
                     ],
                   );
@@ -167,66 +172,85 @@ class _StudentExploreScreenState extends State<StudentExploreScreen> {
 }
 
 class _BottomBannerRow extends StatelessWidget {
+  final int matchCount;
+  const _BottomBannerRow({required this.matchCount});
+
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
+          child: GestureDetector(
+            onTap: () => Navigator.pushNamed(context, '/student/skills'),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.psychology_outlined,
+                        color: AppColors.primary, size: 20),
                   ),
-                  child: const Icon(Icons.psychology_outlined, color: AppColors.primary, size: 20),
-                ),
-                const SizedBox(height: 8),
-                Text('New Skills', style: AppTextStyles.labelLg),
-                Text(
-                  'Based on your browsing history',
-                  style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text('New Skills', style: AppTextStyles.labelLg),
+                  Text(
+                    'Update your skills & focus areas',
+                    style: AppTextStyles.labelMd
+                        .copyWith(color: AppColors.onSurfaceVariant),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
-          child: Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.06),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(10),
+          child: GestureDetector(
+            onTap: () =>
+                Navigator.pushNamed(context, '/student/match-alerts'),
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.06),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(Icons.notifications_outlined,
+                        color: AppColors.primary, size: 20),
                   ),
-                  child: const Icon(Icons.notifications_outlined, color: AppColors.primary, size: 20),
-                ),
-                const SizedBox(height: 8),
-                Text('Match Alerts', style: AppTextStyles.labelLg),
-                Text(
-                  '3 new matching roles today',
-                  style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text('Match Alerts', style: AppTextStyles.labelLg),
+                  Text(
+                    matchCount > 0
+                        ? '$matchCount matching role${matchCount == 1 ? '' : 's'}'
+                        : 'See roles matching your profile',
+                    style: AppTextStyles.labelMd.copyWith(
+                      color: matchCount > 0
+                          ? AppColors.primary
+                          : AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

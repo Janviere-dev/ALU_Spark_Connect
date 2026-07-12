@@ -39,11 +39,12 @@ class _StudentHomeScreenState extends State<StudentHomeScreen> {
       backgroundColor: AppColors.background,
       appBar: ALUAppBar(
         showNotification: true,
-        showSettings: false,
+        showSettings: true,
         userInitials: user?.initials ?? 'U',
         notificationCount: 3,
         onNotification: () => Navigator.pushNamed(context, '/student/notifications'),
-        onAvatar: () => Navigator.pushNamed(context, '/student/edit-profile'),
+        onSettings: () => Navigator.pushNamed(context, '/student/settings'),
+        onAvatar: () => Navigator.pushNamed(context, '/student/profile'),
       ),
       body: RefreshIndicator(
         color: AppColors.primary,

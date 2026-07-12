@@ -1,3 +1,5 @@
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/auth/auth_bloc.dart';
@@ -20,7 +22,20 @@ class EditProfileScreen extends StatefulWidget {
 }
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
+  String? _pickedImagePath;
+
+  Future<void> _pickImage() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.image,
+      allowMultiple: false,
+    );
+    if (result != null && result.files.single.path != null) {
+      setState(() => _pickedImagePath = result.files.single.path!);
+    }
+  }
+
   final _nameCtrl = TextEditingController();
+  final _locationCtrl = TextEditingController();
   final _educationCtrl = TextEditingController();
   final _pitchCtrl = TextEditingController();
   final _portfolioCtrl = TextEditingController();
@@ -43,6 +58,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     if (_initialized) return;
     _initialized = true;
     _nameCtrl.text = state.user.fullName;
+    _locationCtrl.text = state.user.location ?? '';
     _educationCtrl.text = state.user.education ?? '';
     _pitchCtrl.text = state.user.shortPitch ?? '';
     _portfolioCtrl.text = state.user.portfolioUrl ?? '';
@@ -102,6 +118,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   @override
   void dispose() {
     _nameCtrl.dispose();
+    _locationCtrl.dispose();
     _educationCtrl.dispose();
     _pitchCtrl.dispose();
     _portfolioCtrl.dispose();
@@ -174,48 +191,73 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   ),
                   const SizedBox(height: 24),
                   Center(
-                    child: Stack(
-                      children: [
-                        Container(
-                          width: 88,
-                          height: 88,
-                          decoration: BoxDecoration(
-                            gradient: AppColors.primaryGradient,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.primary.withValues(alpha: 0.3),
-                              width: 3,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              state.user.initials,
-                              style: AppTextStyles.headlineLg.copyWith(color: Colors.white),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          bottom: 0,
-                          right: 0,
-                          child: Container(
-                            width: 28,
-                            height: 28,
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: Stack(
+                        children: [
+                          Container(
+                            width: 88,
+                            height: 88,
                             decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
+                              gradient: _pickedImagePath == null
+                                  ? AppColors.primaryGradient
+                                  : null,
                               shape: BoxShape.circle,
-                              border: Border.all(color: Colors.white, width: 2),
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.3),
+                                width: 3,
+                              ),
                             ),
-                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                            child: ClipOval(
+                              child: _pickedImagePath != null
+                                  ? Image.file(
+                                      File(_pickedImagePath!),
+                                      fit: BoxFit.cover,
+                                      width: 88,
+                                      height: 88,
+                                    )
+                                  : state.user.avatarUrl != null
+                                      ? Image.network(
+                                          state.user.avatarUrl!,
+                                          fit: BoxFit.cover,
+                                          width: 88,
+                                          height: 88,
+                                        )
+                                      : Center(
+                                          child: Text(
+                                            state.user.initials,
+                                            style: AppTextStyles.headlineLg
+                                                .copyWith(color: Colors.white),
+                                          ),
+                                        ),
+                            ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            child: Container(
+                              width: 28,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                gradient: AppColors.primaryGradient,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 2),
+                              ),
+                              child: const Icon(Icons.camera_alt, color: Colors.white, size: 14),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 8),
                   Center(
-                    child: Text(
-                      'Change Profile Picture',
-                      style: AppTextStyles.labelLg.copyWith(color: AppColors.primary),
+                    child: GestureDetector(
+                      onTap: _pickImage,
+                      child: Text(
+                        'Change Profile Picture',
+                        style: AppTextStyles.labelLg.copyWith(color: AppColors.primary),
+                      ),
                     ),
                   ),
                   Center(
@@ -234,6 +276,14 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                           label: 'Full Name',
                           hint: 'Your full name',
                           controller: _nameCtrl,
+                        ),
+                        const SizedBox(height: 14),
+                        AppTextField(
+                          label: 'Location',
+                          hint: 'Kigali, Rwanda',
+                          controller: _locationCtrl,
+                          prefixIcon: const Icon(Icons.location_on_outlined,
+                              color: AppColors.outline, size: 20),
                         ),
                         const SizedBox(height: 14),
                         AppTextField(
@@ -403,6 +453,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       onPressed: () {
                         context.read<ProfileCubit>().save(
                               fullName: _nameCtrl.text,
+                              avatarUrl: _pickedImagePath,
+                              location: _locationCtrl.text.trim().isEmpty ? null : _locationCtrl.text.trim(),
                               education: _educationCtrl.text,
                               shortPitch: _pitchCtrl.text,
                               portfolioUrl: _portfolioCtrl.text,

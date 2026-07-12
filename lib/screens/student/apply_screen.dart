@@ -1,4 +1,3 @@
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../blocs/application/application_cubit.dart';
@@ -25,8 +24,7 @@ class _ApplyScreenState extends State<ApplyScreen> {
   final _nameCtrl = TextEditingController();
   final _emailCtrl = TextEditingController();
   final _pitchCtrl = TextEditingController();
-  String? _cvFileName;
-  String? _cvPath;
+  final _cvLinkCtrl = TextEditingController();
   int _wordCount = 0;
 
   @override
@@ -41,7 +39,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
   }
 
   void _onPitchChanged() {
-    final words = _pitchCtrl.text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
+    final words =
+        _pitchCtrl.text.trim().split(RegExp(r'\s+')).where((w) => w.isNotEmpty).length;
     setState(() => _wordCount = words);
   }
 
@@ -50,20 +49,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
     _nameCtrl.dispose();
     _emailCtrl.dispose();
     _pitchCtrl.dispose();
+    _cvLinkCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickCV() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['pdf', 'doc', 'docx'],
-    );
-    if (result != null) {
-      setState(() {
-        _cvFileName = result.files.single.name;
-        _cvPath = result.files.single.path;
-      });
-    }
   }
 
   void _submit() {
@@ -82,7 +69,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
           roleTitle: widget.opportunity.roleTitle,
           startupName: widget.opportunity.startupName,
           pitch: _pitchCtrl.text.trim(),
-          cvPath: _cvPath,
+          cvUrl: _cvLinkCtrl.text.trim().isEmpty ? null : _cvLinkCtrl.text.trim(),
+          opportunitySkills: widget.opportunity.skills,
         );
   }
 
@@ -184,8 +172,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
                             ),
                             Text(
                               widget.opportunity.startupName,
-                              style: AppTextStyles.bodyMd.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.8)),
+                              style: AppTextStyles.bodyMd
+                                  .copyWith(color: Colors.white.withValues(alpha: 0.8)),
                             ),
                           ],
                         ),
@@ -231,7 +219,8 @@ class _ApplyScreenState extends State<ApplyScreen> {
                   maxLines: 6,
                   style: AppTextStyles.bodyMd,
                   decoration: InputDecoration(
-                    hintText: 'In 150 words or less, tell us why you\'re the right fit for this role and what excites you about this opportunity...',
+                    hintText:
+                        'In 150 words or less, tell us why you\'re the right fit for this role and what excites you about this opportunity...',
                     hintStyle: AppTextStyles.bodyMd.copyWith(color: AppColors.outline),
                     filled: true,
                     fillColor: AppColors.surfaceContainerLow,
@@ -250,7 +239,9 @@ class _ApplyScreenState extends State<ApplyScreen> {
                     contentPadding: const EdgeInsets.all(16),
                   ),
                   validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Please share why you\'re interested';
+                    if (v == null || v.trim().isEmpty) {
+                      return 'Please share why you\'re interested';
+                    }
                     if (_wordCount > AppConstants.maxApplicationWords) {
                       return 'Please keep it under ${AppConstants.maxApplicationWords} words';
                     }
@@ -258,43 +249,18 @@ class _ApplyScreenState extends State<ApplyScreen> {
                   },
                 ),
                 const SizedBox(height: 20),
-                Text('Upload CV', style: AppTextStyles.labelLg),
+                Text('Upload Your CV to help Startups know who you\'re', style: AppTextStyles.labelLg),
+                const SizedBox(height: 4),
+                Text(
+                  'Paste a Google Drive with your uploaded CV',
+                  style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
+                ),
                 const SizedBox(height: 8),
-                GestureDetector(
-                  onTap: _pickCV,
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: _cvFileName != null ? AppColors.primary : AppColors.outlineVariant,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    child: Column(
-                      children: [
-                        Icon(
-                          _cvFileName != null ? Icons.check_circle : Icons.upload_file_outlined,
-                          color: _cvFileName != null ? AppColors.primary : AppColors.outline,
-                          size: 32,
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          _cvFileName ?? 'Tap to upload PDF, DOC',
-                          style: AppTextStyles.labelLg.copyWith(
-                            color: _cvFileName != null ? AppColors.primary : AppColors.outline,
-                          ),
-                        ),
-                        if (_cvFileName == null)
-                          Text(
-                            'Optional — helps startups learn more about you',
-                            style: AppTextStyles.labelMd.copyWith(color: AppColors.outline),
-                          ),
-                      ],
-                    ),
-                  ),
+                AppTextField(
+                  label: '',
+                  hint: 'https://drive.google.com/...',
+                  controller: _cvLinkCtrl,
+                  keyboardType: TextInputType.url,
                 ),
                 const SizedBox(height: 32),
                 BlocBuilder<ApplicationCubit, ApplicationState>(

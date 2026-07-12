@@ -19,14 +19,18 @@ class StartupCubit extends Cubit<StartupState> {
     emit(StartupLoading());
     try {
       final stats = await _startupRepo.getDashboardStats(startupId);
-      final postings = await _oppRepo.getForStartup(startupId);
+      final allPostings = await _oppRepo.getForStartup(startupId);
+      final activePostings = allPostings
+          .where((p) =>
+              p.status == OpportunityStatus.active && !p.isExpired)
+          .toList();
       final activity = await _startupRepo.getRecentActivity(startupId);
       emit(StartupDashboardLoaded(
         activeRoles: stats['activeRoles'] as int,
         totalApplications: stats['totalApplications'] as int,
         avgTimeToHire: stats['avgTimeToHire'] as int,
         newApplicationsToday: stats['newApplicationsToday'] as int,
-        postings: postings,
+        postings: activePostings,
         recentActivity: activity,
       ));
     } catch (e) {

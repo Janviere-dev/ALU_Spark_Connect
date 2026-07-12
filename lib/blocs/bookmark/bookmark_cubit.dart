@@ -1,20 +1,22 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import '../../data/mock/mock_data.dart';
+import '../../data/repositories/bookmark_repository.dart';
 
 part 'bookmark_state.dart';
 
 class BookmarkCubit extends Cubit<BookmarkState> {
-  final MockDB _db = MockDB();
+  final BookmarkRepository _repo;
 
-  BookmarkCubit() : super(BookmarkInitial());
+  BookmarkCubit({required BookmarkRepository bookmarkRepository})
+      : _repo = bookmarkRepository,
+        super(BookmarkInitial());
 
-  void load(String userId) {
+  Future<void> load(String userId) async {
     try {
-      final user = _db.users.firstWhere((u) => u.id == userId);
+      final data = await _repo.load(userId);
       emit(BookmarkLoaded(
-        savedOpportunityIds: List<String>.from(user.savedOpportunityIds),
-        savedStudentIds: List<String>.from(user.savedStudentIds),
+        savedOpportunityIds: data['opportunities']!,
+        savedStudentIds: data['students']!,
       ));
     } catch (_) {
       emit(const BookmarkLoaded(
@@ -24,29 +26,37 @@ class BookmarkCubit extends Cubit<BookmarkState> {
     }
   }
 
-  void toggleOpportunity(String userId, String opportunityId) {
-    _db.toggleSavedOpportunity(userId, opportunityId);
+  Future<void> toggleOpportunity(String userId, String opportunityId) async {
     final current = state;
-    if (current is BookmarkLoaded) {
-      final ids = List<String>.from(current.savedOpportunityIds);
-      ids.contains(opportunityId) ? ids.remove(opportunityId) : ids.add(opportunityId);
-      emit(BookmarkLoaded(
-        savedOpportunityIds: ids,
-        savedStudentIds: current.savedStudentIds,
-      ));
+    if (current is! BookmarkLoaded) return;
+    final isSaved = current.savedOpportunityIds.contains(opportunityId);
+    final ids = List<String>.from(current.savedOpportunityIds);
+    isSaved ? ids.remove(opportunityId) : ids.add(opportunityId);
+    emit(BookmarkLoaded(
+      savedOpportunityIds: ids,
+      savedStudentIds: current.savedStudentIds,
+    ));
+    try {
+      await _repo.toggleOpportunity(userId, opportunityId, isSaved: isSaved);
+    } catch (_) {
+      emit(current);
     }
   }
 
-  void toggleStudent(String startupId, String studentId) {
-    _db.toggleSavedStudent(startupId, studentId);
+  Future<void> toggleStudent(String startupId, String studentId) async {
     final current = state;
-    if (current is BookmarkLoaded) {
-      final ids = List<String>.from(current.savedStudentIds);
-      ids.contains(studentId) ? ids.remove(studentId) : ids.add(studentId);
-      emit(BookmarkLoaded(
-        savedOpportunityIds: current.savedOpportunityIds,
-        savedStudentIds: ids,
-      ));
+    if (current is! BookmarkLoaded) return;
+    final isSaved = current.savedStudentIds.contains(studentId);
+    final ids = List<String>.from(current.savedStudentIds);
+    isSaved ? ids.remove(studentId) : ids.add(studentId);
+    emit(BookmarkLoaded(
+      savedOpportunityIds: current.savedOpportunityIds,
+      savedStudentIds: ids,
+    ));
+    try {
+      await _repo.toggleStudent(startupId, studentId, isSaved: isSaved);
+    } catch (_) {
+      emit(current);
     }
   }
 
@@ -60,5 +70,10 @@ class BookmarkCubit extends Cubit<BookmarkState> {
     final current = state;
     return current is BookmarkLoaded &&
         current.savedStudentIds.contains(studentId);
+  }
+
+  List<String> get savedOpportunityIds {
+    final current = state;
+    return current is BookmarkLoaded ? current.savedOpportunityIds : [];
   }
 }

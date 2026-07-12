@@ -83,7 +83,7 @@ class StartupSettingsScreen extends StatelessWidget {
                   iconColor: AppColors.primary,
                   title: 'Venture Profile',
                   subtitle: 'Update your startup details',
-                  onTap: () {},
+                  onTap: () => Navigator.pushNamed(context, '/startup/venture-profile'),
                 ),
                 _Item(
                   icon: Icons.people_outline,
@@ -105,7 +105,7 @@ class StartupSettingsScreen extends StatelessWidget {
                   iconColor: AppColors.tertiary,
                   title: 'Manage Opportunities',
                   subtitle: 'Edit, pause, or close postings',
-                  onTap: () {},
+                  onTap: () => Navigator.pushNamed(context, '/startup/manage-opportunities'),
                 ),
                 _Item(
                   icon: Icons.bar_chart_outlined,

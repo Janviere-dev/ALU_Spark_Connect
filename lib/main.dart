@@ -2,6 +2,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'firebase_options.dart';
+import 'blocs/admin/admin_cubit.dart';
 import 'blocs/application/application_cubit.dart';
 import 'blocs/auth/auth_bloc.dart';
 import 'blocs/auth/auth_event.dart';
@@ -13,8 +14,10 @@ import 'blocs/opportunity/opportunity_cubit.dart';
 import 'blocs/profile/profile_cubit.dart';
 import 'blocs/startup/startup_cubit.dart';
 import 'core/theme/app_theme.dart';
+import 'data/repositories/admin_repository.dart';
 import 'data/repositories/application_repository.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/repositories/bookmark_repository.dart';
 import 'data/repositories/invitation_repository.dart';
 import 'data/repositories/notification_repository.dart';
 import 'data/repositories/opportunity_repository.dart';
@@ -35,20 +38,24 @@ class App extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authRepo = AuthRepository();
+    final adminRepo = AdminRepository();
     final oppRepo = OpportunityRepository();
     final appRepo = ApplicationRepository();
     final notifRepo = NotificationRepository();
     final startupRepo = StartupRepository();
     final invitationRepo = InvitationRepository();
+    final bookmarkRepo = BookmarkRepository();
 
     return MultiRepositoryProvider(
       providers: [
         RepositoryProvider.value(value: authRepo),
+        RepositoryProvider.value(value: adminRepo),
         RepositoryProvider.value(value: oppRepo),
         RepositoryProvider.value(value: appRepo),
         RepositoryProvider.value(value: notifRepo),
         RepositoryProvider.value(value: startupRepo),
         RepositoryProvider.value(value: invitationRepo),
+        RepositoryProvider.value(value: bookmarkRepo),
       ],
       child: MultiBlocProvider(
         providers: [
@@ -83,12 +90,16 @@ class App extends StatelessWidget {
             create: (_) => ProfileCubit(authRepository: authRepo),
           ),
           BlocProvider(
+            create: (_) => AdminCubit(adminRepository: adminRepo),
+          ),
+          BlocProvider(
             create: (_) => InvitationCubit(
               invitationRepository: invitationRepo,
             ),
           ),
           BlocProvider(
-            create: (_) => BookmarkCubit(),
+            create: (_) =>
+                BookmarkCubit(bookmarkRepository: bookmarkRepo),
           ),
         ],
         child: MaterialApp(

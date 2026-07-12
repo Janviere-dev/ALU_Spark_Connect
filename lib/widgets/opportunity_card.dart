@@ -63,6 +63,10 @@ class OpportunityCard extends StatelessWidget {
                         .map((s) => SkillChip(label: s))
                         .toList(),
                   ),
+                  if (opportunity.deadline != null) ...[
+                    const SizedBox(height: 8),
+                    _DeadlineBadge(opportunity: opportunity),
+                  ],
                 ],
               ),
             ),
@@ -323,6 +327,40 @@ class RecommendedCard extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DeadlineBadge extends StatelessWidget {
+  final OpportunityModel opportunity;
+  const _DeadlineBadge({required this.opportunity});
+
+  @override
+  Widget build(BuildContext context) {
+    final daysLeft = opportunity.deadline!.difference(DateTime.now()).inDays;
+    final isUrgent = daysLeft <= 3;
+    final color = isUrgent ? const Color(0xFFE53935) : AppColors.onSurfaceVariant;
+    final bgColor = isUrgent
+        ? const Color(0xFFE53935).withValues(alpha: 0.08)
+        : AppColors.surfaceContainerLow;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(Icons.alarm_outlined, size: 13, color: color),
+        const SizedBox(width: 4),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Text(
+            opportunity.deadlineLabel,
+            style: AppTextStyles.labelSm.copyWith(color: color),
+          ),
+        ),
+      ],
     );
   }
 }

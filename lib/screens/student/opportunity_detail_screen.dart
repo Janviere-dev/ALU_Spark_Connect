@@ -123,18 +123,52 @@ class _OpportunityDetailScreenState extends State<OpportunityDetailScreen> {
                               ),
                               const Divider(height: 20),
                               _DetailRow(
+                                icon: Icons.hourglass_bottom_outlined,
+                                iconColor: AppColors.primary.withValues(alpha: 0.6),
+                                label: 'DURATION',
+                                value: opp.duration,
+                              ),
+                              const Divider(height: 20),
+                              _DetailRow(
                                 icon: Icons.location_on_outlined,
                                 iconColor: AppColors.tertiary.withValues(alpha: 0.8),
                                 label: 'LOCATION',
                                 value: opp.location,
                               ),
+                              if (opp.compensation != null) ...[
+                                const Divider(height: 20),
+                                _DetailRow(
+                                  icon: Icons.payments_outlined,
+                                  iconColor: AppColors.statusShortlisted.withValues(alpha: 0.9),
+                                  label: 'COMPENSATION',
+                                  value: opp.compensation!,
+                                ),
+                              ],
                               const Divider(height: 20),
                               _DetailRow(
                                 icon: Icons.calendar_month_outlined,
                                 iconColor: AppColors.statusInterview.withValues(alpha: 0.8),
-                                label: 'POSTED DATE',
-                                value: 'Posted ${opp.postedTimeAgo}',
+                                label: 'POSTED',
+                                value: opp.postedTimeAgo,
                               ),
+                              if (opp.deadline != null) ...[
+                                const Divider(height: 20),
+                                _DetailRow(
+                                  icon: Icons.timer_outlined,
+                                  iconColor: opp.isExpired
+                                      ? AppColors.error
+                                      : opp.deadline!
+                                                  .difference(DateTime.now())
+                                                  .inDays <
+                                              3
+                                          ? AppColors.error.withValues(alpha: 0.8)
+                                          : AppColors.onSurfaceVariant,
+                                  label: 'DEADLINE',
+                                  value: opp.isExpired
+                                      ? 'Closed'
+                                      : '${opp.deadline!.day}/${opp.deadline!.month}/${opp.deadline!.year} · ${opp.deadlineLabel}',
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -217,44 +251,55 @@ class _OpportunityDetailScreenState extends State<OpportunityDetailScreen> {
                           ),
                         ],
                         const SizedBox(height: 16),
-                        Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerLowest,
-                            borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.04), blurRadius: 8),
-                            ],
+                        GestureDetector(
+                          onTap: () => Navigator.pushNamed(
+                            context,
+                            '/student/startup/${opp.startupId}',
+                            arguments: opp.startupName,
                           ),
-                          child: Row(
-                            children: [
-                              Container(
-                                width: 44,
-                                height: 44,
-                                decoration: BoxDecoration(
-                                  gradient: AppColors.primaryGradient,
-                                  borderRadius: BorderRadius.circular(10),
+                          child: Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerLowest,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.04),
+                                    blurRadius: 8),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 44,
+                                  height: 44,
+                                  decoration: BoxDecoration(
+                                    gradient: AppColors.primaryGradient,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  child: const Icon(Icons.business,
+                                      color: Colors.white, size: 22),
                                 ),
-                                child:
-                                    const Icon(Icons.business, color: Colors.white, size: 22),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(opp.startupName, style: AppTextStyles.labelLg),
-                                    Text(
-                                      '${opp.category} Startup • 20-50 Employees',
-                                      style: AppTextStyles.labelMd
-                                          .copyWith(color: AppColors.onSurfaceVariant),
-                                    ),
-                                  ],
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(opp.startupName,
+                                          style: AppTextStyles.labelLg),
+                                      Text(
+                                        'Tap to view venture profile',
+                                        style: AppTextStyles.labelMd.copyWith(
+                                            color: AppColors.primary),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const Icon(Icons.chevron_right, color: AppColors.outline),
-                            ],
+                                const Icon(Icons.chevron_right,
+                                    color: AppColors.outline),
+                              ],
+                            ),
                           ),
                         ),
                         const SizedBox(height: 100),

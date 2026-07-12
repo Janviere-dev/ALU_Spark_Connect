@@ -8,7 +8,7 @@ import '../../core/theme/app_text_styles.dart';
 import 'home_screen.dart';
 import 'explore_screen.dart';
 import 'applications_screen.dart';
-import 'settings_screen.dart';
+import 'profile_screen.dart';
 
 class StudentShell extends StatefulWidget {
   final int initialIndex;
@@ -25,7 +25,7 @@ class _StudentShellState extends State<StudentShell> {
     StudentHomeScreen(),
     StudentExploreScreen(),
     StudentApplicationsScreen(),
-    StudentSettingsScreen(),
+    StudentProfileScreen(),
   ];
 
   @override

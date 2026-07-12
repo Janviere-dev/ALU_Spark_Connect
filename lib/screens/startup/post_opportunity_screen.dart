@@ -27,11 +27,14 @@ class _PostOpportunityScreenState extends State<PostOpportunityScreen> {
   String? _selectedCategory;
   String _selectedCommitment = 'Part-time';
   String _selectedLocation = 'Remote';
+  String _selectedDuration = '3 months';
   final List<String> _selectedSkills = [];
   final List<String> _customSkills = [];
 
   final List<String> _commitmentOptions = ['Part-time', 'Full-time', 'Project-based'];
   final List<String> _locationOptions = ['Remote', 'On-site', 'Hybrid'];
+  final List<String> _durationOptions = ['1 month', '2 months', '3 months', '6 months', '1 year', 'Ongoing'];
+  DateTime? _deadline;
 
   @override
   void dispose() {
@@ -39,6 +42,22 @@ class _PostOpportunityScreenState extends State<PostOpportunityScreen> {
     _descriptionCtrl.dispose();
     _compensationCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickDeadline() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _deadline ?? DateTime.now().add(const Duration(days: 14)),
+      firstDate: DateTime.now().add(const Duration(days: 1)),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: const ColorScheme.light(primary: AppColors.primary),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) setState(() => _deadline = picked);
   }
 
   void _addCustomSkill() {
@@ -106,13 +125,14 @@ class _PostOpportunityScreenState extends State<PostOpportunityScreen> {
       category: _selectedCategory!,
       commitment: _selectedCommitment,
       location: _selectedLocation,
-      duration: '3 months',
+      duration: _selectedDuration,
       isRemoteFriendly: _selectedLocation == 'Remote' || _selectedLocation == 'Hybrid',
       compensation: _compensationCtrl.text.trim().isNotEmpty
           ? _compensationCtrl.text.trim()
           : null,
       skills: _selectedSkills,
       postedAt: DateTime.now(),
+      deadline: _deadline,
     );
 
     context.read<StartupCubit>().postOpportunity(opportunity);
@@ -324,6 +344,87 @@ class _PostOpportunityScreenState extends State<PostOpportunityScreen> {
                             ),
                           );
                         }).toList(),
+                      ),
+                      const SizedBox(height: 14),
+                      Text('Duration', style: AppTextStyles.labelLg),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: _durationOptions.map((opt) {
+                          final isSelected = _selectedDuration == opt;
+                          return GestureDetector(
+                            onTap: () => setState(() => _selectedDuration = opt),
+                            child: AnimatedContainer(
+                              duration: const Duration(milliseconds: 150),
+                              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                              decoration: BoxDecoration(
+                                gradient: isSelected ? AppColors.primaryGradient : null,
+                                color: isSelected ? null : AppColors.surfaceContainerLow,
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                  color: isSelected ? Colors.transparent : AppColors.outlineVariant,
+                                ),
+                              ),
+                              child: Text(
+                                opt,
+                                style: AppTextStyles.labelMd.copyWith(
+                                  color: isSelected ? Colors.white : AppColors.onSurface,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 16),
+                      Text('Application Deadline (optional)', style: AppTextStyles.labelLg),
+                      const SizedBox(height: 8),
+                      GestureDetector(
+                        onTap: _pickDeadline,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: _deadline != null
+                                ? AppColors.primary.withValues(alpha: 0.08)
+                                : AppColors.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: _deadline != null
+                                  ? AppColors.primary
+                                  : AppColors.outlineVariant,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.calendar_today_outlined,
+                                color: _deadline != null
+                                    ? AppColors.primary
+                                    : AppColors.onSurfaceVariant,
+                                size: 18,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  _deadline != null
+                                      ? 'Closes ${_deadline!.day}/${_deadline!.month}/${_deadline!.year}'
+                                      : 'No deadline — stays open until closed manually',
+                                  style: AppTextStyles.labelMd.copyWith(
+                                    color: _deadline != null
+                                        ? AppColors.primary
+                                        : AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ),
+                              if (_deadline != null)
+                                GestureDetector(
+                                  onTap: () => setState(() => _deadline = null),
+                                  child: const Icon(Icons.close,
+                                      color: AppColors.onSurfaceVariant, size: 16),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     ],
                   ),
