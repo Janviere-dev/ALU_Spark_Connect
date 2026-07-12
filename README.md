@@ -2,7 +2,7 @@
 
 **A role-based talent matching platform connecting African Leadership University students with ALU student-led startups.**
 
-ALU Connect bridges the gap between ALU students seeking real-world experience and student-led startups that need vetted, committed talent from within the ALU community. Every startup is verified by an admin before they can post a single opportunity — trust is built into the architecture, not added as an afterthought.
+ALU Connect bridges the gap between ALU students seeking real-world experience and student-led startups that need vetted, committed talent from within the ALU community. Every startup is verified by an admin before they can post a single opportunity  trust is built into the architecture, not added as an afterthought.
 
 ---
 
@@ -77,8 +77,7 @@ ALU Connect bridges the gap between ALU students seeking real-world experience a
 └─────────────────────────────────────────────┘
 ```
 
-Screens never touch Firestore directly. All I/O goes through the repository layer. See the [Technical Report](https://claude.ai/code/artifact/60503432-dd6a-4316-9bb2-42287ea3937f) for the full architecture documentation.
-
+Screens never touch Firestore directly. All I/O goes through the repository layer. 
 ---
 
 ## Firestore Collections
