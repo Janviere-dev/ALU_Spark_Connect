@@ -22,7 +22,7 @@ ALU Connect bridges the gap between ALU students seeking real-world experience a
      Replace with:  https://github.com/YOUR_USERNAME/YOUR_REPO/raw/main/demo.mp4
 ──────────────────────────────────────────────────────────────────────────── -->
 
-[![ALU Connect Demo Video](https://www.youtube.com/watch?v=eAo4bEJJHoI)
+[![ALU Connect Demo Video](https://youtube.com)](https://www.youtube.com/watch?v=eAo4bEJJHoI)
 
 > *Click the thumbnail above to watch the full 10-minute demo walkthrough.*
 
